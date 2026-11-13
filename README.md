@@ -15,9 +15,9 @@ The project follows Clean Architecture: dependencies point inward, and the domai
 
 ## Local development
 
-Requirements: Node.js 22+, Docker.
+Requirements: Node.js 22+, pnpm, Docker.
 
 ```sh
 cp .env.example .env   # then set a password
-npm run db:up          # starts PostgreSQL on localhost:5432
+pnpm db:up            # starts PostgreSQL on localhost:5432
 ```
