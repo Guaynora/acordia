@@ -31,3 +31,7 @@ Checks: `pnpm test` and `pnpm typecheck` run across all packages.
 Database changes: edit `apps/web/src/infrastructure/db/schema.ts`, then run
 `pnpm --filter @acordia/web db:generate` and commit the new migration in
 `apps/web/drizzle/`.
+
+## License
+
+[MIT](LICENSE)
