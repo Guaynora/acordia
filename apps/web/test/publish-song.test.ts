@@ -1,38 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { PublishSong, looksLikeChordPro } from "@/application/publish-song";
-import type { Song, SongSummary } from "@/domain/song";
-import type { NewSong, SongRepository } from "@/domain/song-repository";
-
-/** In-memory adapter: the use case runs without a database. */
-class InMemorySongRepository implements SongRepository {
-  readonly songs: NewSong[] = [];
-
-  async search(): Promise<SongSummary[]> {
-    return this.songs;
-  }
-
-  async findBySlug(slug: string): Promise<Song | null> {
-    const song = this.songs.find((s) => s.slug === slug);
-    if (!song) return null;
-    return {
-      ...song,
-      id: slug,
-      arrangements: [{ id: "a", ...song.arrangement, createdAt: new Date(0) }],
-      recordings: song.recordings.map((r, i) => ({ id: String(i), ...r, key: null })),
-    };
-  }
-
-  async slugExists(slug: string): Promise<boolean> {
-    return this.songs.some((s) => s.slug === slug);
-  }
-
-  async create(song: NewSong): Promise<Song> {
-    this.songs.push(song);
-    const created = await this.findBySlug(song.slug);
-    if (!created) throw new Error("unreachable");
-    return created;
-  }
-}
+import { PublishSong } from "@/application/publish-song";
+import { looksLikeChordPro } from "@/application/song-input";
+import { InMemorySongRepository } from "./support/in-memory-song-repository";
 
 const VALID = {
   title: "Canción de prueba",

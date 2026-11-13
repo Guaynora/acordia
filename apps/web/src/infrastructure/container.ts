@@ -1,4 +1,5 @@
 import "server-only";
+import { AddArrangement } from "@/application/add-arrangement";
 import { PublishSong } from "@/application/publish-song";
 import { GetSong, SearchSongs } from "@/application/queries";
 import { getDb } from "./db/client";
@@ -14,6 +15,7 @@ function songRepository() {
 
 export const useCases = {
   publishSong: () => new PublishSong(songRepository()),
+  addArrangement: () => new AddArrangement(songRepository()),
   searchSongs: () => new SearchSongs(songRepository()),
   getSong: () => new GetSong(songRepository()),
 };

@@ -31,7 +31,8 @@
     "tempoLabel": "Tempo",
     "timeLabel": "Time",
     "resultsOne": "1 song",
-    "resultsQueryOne": "1 result for “{query}”"
+    "resultsQueryOne": "1 result for “{query}”",
+    "versionsCount": "{count} versions"
   },
   "song": {
     "by": "by",
@@ -64,7 +65,18 @@
     "fontSize": "Text size",
     "fontSmaller": "Smaller text",
     "fontLarger": "Larger text",
-    "metronomeShortcut": "Go to metronome"
+    "metronomeShortcut": "Go to metronome",
+    "versions": "Versions",
+    "addVersion": "Upload another version",
+    "versionBy": "by {author}",
+    "kinds": {
+      "original": "Original",
+      "simplified": "Simplified",
+      "reharmonization": "Reharmonization",
+      "acoustic": "Acoustic",
+      "piano": "Piano",
+      "other": "Other"
+    }
   },
   "metronome": {
     "title": "Metronome",
@@ -109,7 +121,9 @@
       "invalid_time_signature": "Invalid time signature.",
       "unknown_chord": "Unrecognized chord: {detail}",
       "invalid_recording_url": "Invalid link: {detail}",
-      "unexpected": "We couldn't publish the song. Please try again."
+      "unexpected": "We couldn't publish the song. Please try again.",
+      "not_found": "This song no longer exists.",
+      "invalid_kind": "Invalid version type."
     },
     "tap": "Tap",
     "subtitle": "Paste chords the way you would copy them from another site. We check every chord and show how it looks before publishing.",
@@ -125,7 +139,19 @@
     "previewTab": "Preview",
     "untitled": "Untitled",
     "unknownArtist": "Artist",
-    "keyShort": "Key"
+    "keyShort": "Key",
+    "versionTitle": "New version of {title}",
+    "versionSubtitle": "Share another way to play {title}: easier, reharmonized, for piano…",
+    "nameLabel": "Version name",
+    "namePlaceholder": "e.g. Jazz reharmonization",
+    "kindLabel": "Type",
+    "authorLabel": "Your name",
+    "authorHelp": "Optional. Shown as the author of this version.",
+    "descriptionLabel": "Description",
+    "descriptionHelp": "Optional. What changes compared to the original.",
+    "sameAsSong": "Same ({value})",
+    "tempoInheritHelp": "Leave it empty to use the song's ({bpm} BPM).",
+    "submitVersion": "Publish version"
   },
   "notFound": {
     "title": "We couldn't find that page",

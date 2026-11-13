@@ -1,6 +1,6 @@
 import { asc, desc, eq, sql } from "drizzle-orm";
 import type { Song, SongSummary } from "@/domain/song";
-import type { NewSong, SongRepository } from "@/domain/song-repository";
+import type { NewArrangement, NewSong, SongRepository } from "@/domain/song-repository";
 import type { Database } from "../db/client";
 import { arrangements, recordings, songs } from "../db/schema";
 
@@ -15,6 +15,9 @@ export class DrizzleSongRepository implements SongRepository {
       originalKey: songs.originalKey,
       tempo: songs.tempo,
       timeSignature: songs.timeSignature,
+      // Qualified names on purpose: interpolated columns render unqualified,
+      // which inside the subquery would bind "id" to arrangements.id.
+      arrangementCount: sql<number>`(select count(*)::int from "arrangements" where "arrangements"."song_id" = "songs"."id")`,
     };
     if (query === "") {
       return this.db.select(columns).from(songs).orderBy(desc(songs.createdAt)).limit(limit);
@@ -48,7 +51,14 @@ export class DrizzleSongRepository implements SongRepository {
       timeSignature: song.timeSignature,
       arrangements: songArrangements.map((a) => ({
         id: a.id,
+        slug: a.slug,
+        name: a.name,
+        kind: a.kind,
+        description: a.description,
+        authorName: a.authorName,
         key: a.key,
+        tempo: a.tempo,
+        timeSignature: a.timeSignature,
         chordpro: a.chordpro,
         createdAt: a.createdAt,
       })),
@@ -89,5 +99,9 @@ export class DrizzleSongRepository implements SongRepository {
     const created = await this.findBySlug(input.slug);
     if (!created || created.id !== songId) throw new Error("Created song could not be read back");
     return created;
+  }
+
+  async addArrangement(songId: string, arrangement: NewArrangement): Promise<void> {
+    await this.db.insert(arrangements).values({ songId, ...arrangement });
   }
 }

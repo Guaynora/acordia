@@ -143,7 +143,14 @@ function SongRow({ song, index, href, dict }: { song: SongSummary; index: number
         </span>
         <div className="min-w-0">
           <p className="truncate font-display text-lg font-semibold group-hover:text-accent">{song.title}</p>
-          <p className="truncate text-sm text-muted">{song.artist}</p>
+          <p className="truncate text-sm text-muted">
+            {song.artist}
+            {song.arrangementCount > 1 && (
+              <span className="ml-2 rounded-full bg-secondary-soft px-2 py-0.5 font-mono text-[11px] font-semibold text-secondary">
+                {format(dict.home.versionsCount, { count: song.arrangementCount })}
+              </span>
+            )}
+          </p>
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-2">

@@ -3,17 +3,35 @@
 import { type ChordError, parseChordProSong } from "@acordia/chord-engine";
 import { useActionState, useDeferredValue, useMemo, useRef, useState } from "react";
 import { replaceChord } from "@/application/fix-chord";
-import { type PublishField, normalizeKeyInput, prepareSource } from "@/application/publish-song";
-import type { PublishFormState } from "@/app/[lang]/songs/new/actions";
-import { TIME_SIGNATURES } from "@/domain/song";
+import { type InputError, type InputField, normalizeKeyInput, prepareSource } from "@/application/song-input";
+import { ARRANGEMENT_KINDS, TIME_SIGNATURES } from "@/domain/song";
 import { tempoMarking } from "@/domain/tempo";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { format } from "@/i18n/format";
 import { ChordSheet } from "./chord-sheet";
 
-type Action = (state: PublishFormState, form: FormData) => Promise<PublishFormState>;
+/** What a server action returns to the form after a failed submission. */
+export interface FormState {
+  readonly errors: readonly InputError[];
+  readonly unexpected: boolean;
+}
 
-const INITIAL: PublishFormState = { errors: [], unexpected: false };
+type Action = (state: FormState, form: FormData) => Promise<FormState>;
+
+/** Uploading a new song, or a new version of an existing one. */
+export type FormMode =
+  | { readonly kind: "song" }
+  | {
+      readonly kind: "version";
+      readonly song: {
+        readonly title: string;
+        readonly artist: string;
+        readonly tempo: number | null;
+        readonly timeSignature: string;
+      };
+    };
+
+const INITIAL: FormState = { errors: [], unexpected: false };
 
 interface ChordIssue {
   readonly symbol: string;
@@ -34,24 +52,32 @@ function groupIssues(errors: readonly ChordError[]): ChordIssue[] {
 
 export function UploadForm({
   action,
+  mode,
   labels,
-  sections,
+  song: songLabels,
   markings,
 }: {
   action: Action;
+  mode: FormMode;
   labels: Dictionary["upload"];
-  sections: Dictionary["song"]["sections"];
+  song: Dictionary["song"];
   markings: Dictionary["tempoMarkings"];
 }) {
+  const isVersion = mode.kind === "version";
   const [state, formAction, pending] = useActionState(action, INITIAL);
   const [tab, setTab] = useState<"edit" | "preview">("edit");
   // Controlled fields so values survive a failed submission.
   const [fields, setFields] = useState({
     title: "",
     artist: "",
+    name: "",
+    kind: "reharmonization",
+    description: "",
+    authorName: "",
     key: "",
     tempo: "",
-    timeSignature: "4/4",
+    // Empty in a version means "same as the song".
+    timeSignature: isVersion ? "" : "4/4",
     source: "",
     recordings: "",
   });
@@ -87,12 +113,18 @@ export function UploadForm({
       ),
     }));
 
-  const errorsFor = (field: PublishField) =>
+  const errorsFor = (field: InputField) =>
     state.errors
       .filter((e) => e.field === field && e.code !== "unknown_chord")
       .map((e) => format(labels.errors[e.code], { detail: e.detail ?? "" }));
+  const songErrors = errorsFor("song");
 
-  const tempo = Number(fields.tempo);
+  // Tempo and meter shown in the preview fall back to the song's in a version.
+  const typedTempo = Number(fields.tempo);
+  const tempo =
+    typedTempo >= 30 && typedTempo <= 300 ? typedTempo : isVersion ? mode.song.tempo : null;
+  const timeSignature = fields.timeSignature || (isVersion ? mode.song.timeSignature : "4/4");
+
   const tabButton = (value: "edit" | "preview", text: string) => (
     <button type="button" aria-pressed={tab === value} onClick={() => setTab(value)} className="segmented-item flex-1">
       {text}
@@ -109,14 +141,50 @@ export function UploadForm({
       <div className="grid items-start gap-6 lg:grid-cols-2">
         {/* Form */}
         <div className={`card flex flex-col gap-6 p-5 sm:p-7 ${tab === "preview" ? "hidden lg:flex" : ""}`}>
-          <div className="grid gap-5 sm:grid-cols-2">
-            <Field label={labels.titleLabel} required errors={errorsFor("title")}>
-              <input name="title" required value={fields.title} onChange={set("title")} className="input" />
-            </Field>
-            <Field label={labels.artistLabel} required errors={errorsFor("artist")}>
-              <input name="artist" required value={fields.artist} onChange={set("artist")} className="input" />
-            </Field>
-          </div>
+          {isVersion ? (
+            <>
+              <div className="grid gap-5 sm:grid-cols-[1.4fr_1fr]">
+                <Field label={labels.nameLabel} required errors={errorsFor("name")}>
+                  <input
+                    name="name"
+                    required
+                    maxLength={60}
+                    value={fields.name}
+                    onChange={set("name")}
+                    placeholder={labels.namePlaceholder}
+                    className="input"
+                  />
+                </Field>
+                <Field label={labels.kindLabel} errors={errorsFor("kind")}>
+                  <select name="kind" value={fields.kind} onChange={set("kind")} className="input">
+                    {ARRANGEMENT_KINDS.filter((k) => k !== "original").map((kind) => (
+                      <option key={kind} value={kind}>
+                        {songLabels.kinds[kind]}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              </div>
+              <Field label={labels.descriptionLabel} help={labels.descriptionHelp} errors={[]}>
+                <input
+                  name="description"
+                  maxLength={280}
+                  value={fields.description}
+                  onChange={set("description")}
+                  className="input"
+                />
+              </Field>
+            </>
+          ) : (
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Field label={labels.titleLabel} required errors={errorsFor("title")}>
+                <input name="title" required value={fields.title} onChange={set("title")} className="input" />
+              </Field>
+              <Field label={labels.artistLabel} required errors={errorsFor("artist")}>
+                <input name="artist" required value={fields.artist} onChange={set("artist")} className="input" />
+              </Field>
+            </div>
+          )}
 
           <div className="grid gap-5 sm:grid-cols-[1fr_1.3fr_1fr]">
             <Field label={labels.keyLabel} required help={labels.keyHelp} errors={errorsFor("key")}>
@@ -131,17 +199,24 @@ export function UploadForm({
             </Field>
             <Field
               label={labels.tempoLabel}
-              required
-              help={tempo >= 30 && tempo <= 300 ? markings[tempoMarking(tempo)] : labels.tempoHelp}
+              required={!isVersion}
+              help={
+                typedTempo >= 30 && typedTempo <= 300
+                  ? markings[tempoMarking(typedTempo)]
+                  : isVersion && mode.song.tempo !== null
+                    ? format(labels.tempoInheritHelp, { bpm: mode.song.tempo })
+                    : labels.tempoHelp
+              }
               errors={errorsFor("tempo")}
             >
               <div className="flex gap-2">
                 <input
                   name="tempo"
-                  required
+                  required={!isVersion}
                   inputMode="numeric"
                   value={fields.tempo}
                   onChange={set("tempo")}
+                  placeholder={isVersion && mode.song.tempo !== null ? String(mode.song.tempo) : undefined}
                   className="input font-mono text-lg"
                 />
                 <button type="button" className="btn-secondary min-h-12 px-3 font-mono text-xs" onClick={tap}>
@@ -156,6 +231,9 @@ export function UploadForm({
                 onChange={set("timeSignature")}
                 className="input font-mono"
               >
+                {isVersion && (
+                  <option value="">{format(labels.sameAsSong, { value: mode.song.timeSignature })}</option>
+                )}
                 {TIME_SIGNATURES.map((ts) => (
                   <option key={ts}>{ts}</option>
                 ))}
@@ -213,25 +291,38 @@ export function UploadForm({
             </section>
           )}
 
-          <Field label={labels.recordingsLabel} help={labels.recordingsHelp} errors={errorsFor("recordings")}>
-            <textarea
-              name="recordings"
-              rows={2}
-              value={fields.recordings}
-              onChange={set("recordings")}
-              placeholder="https://www.youtube.com/watch?v=…"
-              className="input font-mono text-sm"
+          {!isVersion && (
+            <Field label={labels.recordingsLabel} help={labels.recordingsHelp} errors={errorsFor("recordings")}>
+              <textarea
+                name="recordings"
+                rows={2}
+                value={fields.recordings}
+                onChange={set("recordings")}
+                placeholder="https://www.youtube.com/watch?v=…"
+                className="input font-mono text-sm"
+              />
+            </Field>
+          )}
+
+          <Field label={labels.authorLabel} help={labels.authorHelp} errors={[]}>
+            <input
+              name="authorName"
+              maxLength={80}
+              value={fields.authorName}
+              onChange={set("authorName")}
+              autoComplete="name"
+              className="input"
             />
           </Field>
 
-          {state.unexpected && (
+          {(state.unexpected || songErrors.length > 0) && (
             <p role="alert" className="text-sm text-danger">
-              {labels.errors.unexpected}
+              {songErrors[0] ?? labels.errors.unexpected}
             </p>
           )}
 
           <button type="submit" className="btn-primary min-h-12 text-base" disabled={pending || issues.length > 0}>
-            {pending ? labels.submitting : labels.submit}
+            {pending ? labels.submitting : isVersion ? labels.submitVersion : labels.submit}
           </button>
         </div>
 
@@ -246,25 +337,36 @@ export function UploadForm({
               <span className="inline-block size-2 rounded-full bg-secondary" aria-hidden="true" />
               {labels.preview}
             </p>
-            <h2 className="font-display text-2xl font-bold tracking-tight">{fields.title.trim() || labels.untitled}</h2>
-            <p className="text-muted">{fields.artist.trim() || labels.unknownArtist}</p>
+            <h2 className="font-display text-2xl font-bold tracking-tight">
+              {isVersion ? mode.song.title : fields.title.trim() || labels.untitled}
+            </h2>
+            <p className="text-muted">
+              {isVersion
+                ? [mode.song.artist, fields.name.trim()].filter(Boolean).join(" · ")
+                : fields.artist.trim() || labels.unknownArtist}
+            </p>
             <div className="mt-4 flex flex-wrap gap-2 font-mono text-xs font-semibold">
               {fields.key.trim() && (
                 <span className="rounded-full bg-accent-soft px-3 py-1 text-accent">
                   {labels.keyShort}: {normalizeKeyInput(fields.key)}
                 </span>
               )}
-              {tempo >= 30 && tempo <= 300 && (
+              {tempo !== null && (
                 <span className="rounded-full bg-secondary-soft px-3 py-1 text-secondary">
                   {tempo} BPM · {markings[tempoMarking(tempo)].split(" · ")[0]}
                 </span>
               )}
-              <span className="rounded-full bg-surface px-3 py-1">{fields.timeSignature}</span>
+              <span className="rounded-full bg-surface px-3 py-1">{timeSignature}</span>
+              {isVersion && (
+                <span className="rounded-full bg-surface px-3 py-1">
+                  {songLabels.kinds[fields.kind as keyof typeof songLabels.kinds] ?? ""}
+                </span>
+              )}
             </div>
           </div>
           <div className="max-h-[70vh] overflow-auto p-5 sm:p-7">
             {preview ? (
-              <ChordSheet song={preview.song} labels={sections} fontSize={16} />
+              <ChordSheet song={preview.song} labels={songLabels.sections} fontSize={16} />
             ) : (
               <p className="text-sm text-muted">{labels.previewEmpty}</p>
             )}

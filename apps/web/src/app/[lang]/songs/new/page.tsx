@@ -24,8 +24,9 @@ export default async function NewSongPage({ params }: PageProps<"/[lang]/songs/n
       </header>
       <UploadForm
         action={publishSongAction.bind(null, lang)}
+        mode={{ kind: "song" }}
         labels={dict.upload}
-        sections={dict.song.sections}
+        song={dict.song}
         markings={dict.tempoMarkings}
       />
     </div>

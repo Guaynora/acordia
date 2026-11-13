@@ -1,4 +1,4 @@
-import { looksLikeChordPro } from "./publish-song";
+import { looksLikeChordPro } from "./song-input";
 
 const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 

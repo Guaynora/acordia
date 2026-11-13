@@ -1,5 +1,17 @@
 import type { RecordingReference } from "./recording-url";
-import type { Song, SongSummary } from "./song";
+import type { ArrangementKind, Song, SongSummary } from "./song";
+
+export interface NewArrangement {
+  readonly slug: string;
+  readonly name: string;
+  readonly kind: ArrangementKind;
+  readonly description: string | null;
+  readonly authorName: string | null;
+  readonly key: string;
+  readonly tempo: number | null;
+  readonly timeSignature: string | null;
+  readonly chordpro: string;
+}
 
 export interface NewSong {
   readonly slug: string;
@@ -8,7 +20,7 @@ export interface NewSong {
   readonly originalKey: string;
   readonly tempo: number | null;
   readonly timeSignature: string;
-  readonly arrangement: { readonly key: string; readonly chordpro: string };
+  readonly arrangement: NewArrangement;
   readonly recordings: readonly RecordingReference[];
 }
 
@@ -18,4 +30,5 @@ export interface SongRepository {
   findBySlug(slug: string): Promise<Song | null>;
   slugExists(slug: string): Promise<boolean>;
   create(song: NewSong): Promise<Song>;
+  addArrangement(songId: string, arrangement: NewArrangement): Promise<void>;
 }

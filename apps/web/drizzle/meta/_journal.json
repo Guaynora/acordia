@@ -8,6 +8,13 @@
       "when": 1794543150584,
       "tag": "0000_lucky_eternals",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794547356013,
+      "tag": "0001_closed_absorbing_man",
+      "breakpoints": true
     }
   ]
 }

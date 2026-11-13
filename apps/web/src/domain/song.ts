@@ -13,10 +13,27 @@ export interface Recording {
   readonly key: string | null;
 }
 
+export const ARRANGEMENT_KINDS = ["original", "simplified", "reharmonization", "acoustic", "piano", "other"] as const;
+export type ArrangementKind = (typeof ARRANGEMENT_KINDS)[number];
+
+/**
+ * One way of playing a song: the original chords, a simplified version, a
+ * reharmonization... A song always has at least one.
+ */
 export interface Arrangement {
   readonly id: string;
+  /** Unique within the song; used in the URL. */
+  readonly slug: string;
+  readonly name: string;
+  readonly kind: ArrangementKind;
+  readonly description: string | null;
+  /** Free text until user accounts exist. */
+  readonly authorName: string | null;
   /** Key the ChordPro source is written in. */
   readonly key: string;
+  /** Overrides the song's tempo and meter when the arrangement changes the feel. */
+  readonly tempo: number | null;
+  readonly timeSignature: string | null;
   readonly chordpro: string;
   readonly createdAt: Date;
 }
@@ -40,7 +57,11 @@ export interface SongSummary {
   readonly originalKey: string;
   readonly tempo: number | null;
   readonly timeSignature: string;
+  readonly arrangementCount: number;
 }
+
+/** Slugs that collide with routes under /songs/[slug]/. */
+export const RESERVED_ARRANGEMENT_SLUGS = new Set(["new"]);
 
 export { TIME_SIGNATURES } from "./meter";
 

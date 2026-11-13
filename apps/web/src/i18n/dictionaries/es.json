@@ -31,7 +31,8 @@
     "tempoLabel": "Tempo",
     "timeLabel": "Compás",
     "resultsOne": "1 canción",
-    "resultsQueryOne": "1 resultado para “{query}”"
+    "resultsQueryOne": "1 resultado para “{query}”",
+    "versionsCount": "{count} versiones"
   },
   "song": {
     "by": "de",
@@ -64,7 +65,18 @@
     "fontSize": "Tamaño de letra",
     "fontSmaller": "Letra más pequeña",
     "fontLarger": "Letra más grande",
-    "metronomeShortcut": "Ir al metrónomo"
+    "metronomeShortcut": "Ir al metrónomo",
+    "versions": "Versiones",
+    "addVersion": "Subir otra versión",
+    "versionBy": "por {author}",
+    "kinds": {
+      "original": "Original",
+      "simplified": "Simplificada",
+      "reharmonization": "Rearmonización",
+      "acoustic": "Acústica",
+      "piano": "Piano",
+      "other": "Otra"
+    }
   },
   "metronome": {
     "title": "Metrónomo",
@@ -109,7 +121,9 @@
       "invalid_time_signature": "Compás no válido.",
       "unknown_chord": "Acorde no reconocido: {detail}",
       "invalid_recording_url": "Enlace no válido: {detail}",
-      "unexpected": "No pudimos publicar la canción. Inténtalo de nuevo."
+      "unexpected": "No pudimos publicar la canción. Inténtalo de nuevo.",
+      "not_found": "Esta canción ya no existe.",
+      "invalid_kind": "Tipo de versión no válido."
     },
     "tap": "Tap",
     "subtitle": "Pega los acordes como los copiarías de otra web. Revisamos cada acorde y te mostramos cómo queda antes de publicar.",
@@ -125,7 +139,19 @@
     "previewTab": "Vista previa",
     "untitled": "Sin título",
     "unknownArtist": "Artista",
-    "keyShort": "Tono"
+    "keyShort": "Tono",
+    "versionTitle": "Nueva versión de {title}",
+    "versionSubtitle": "Comparte otra forma de tocar {title}: más fácil, rearmonizada, para piano…",
+    "nameLabel": "Nombre de la versión",
+    "namePlaceholder": "Ej.: Rearmonización jazz",
+    "kindLabel": "Tipo",
+    "authorLabel": "Tu nombre",
+    "authorHelp": "Opcional. Aparece como autor de esta versión.",
+    "descriptionLabel": "Descripción",
+    "descriptionHelp": "Opcional. Qué cambia respecto a la original.",
+    "sameAsSong": "Igual ({value})",
+    "tempoInheritHelp": "Déjalo vacío para usar el de la canción ({bpm} BPM).",
+    "submitVersion": "Publicar versión"
   },
   "notFound": {
     "title": "No encontramos esa página",

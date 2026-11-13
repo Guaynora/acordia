@@ -1,8 +1,7 @@
-import { formatKey, importChordsOverLyrics, parseChord, parseKey, validateChordPro } from "@acordia/chord-engine";
 import { parseRecordingUrl, type RecordingReference } from "@/domain/recording-url";
 import { slugify } from "@/domain/slug";
-import { MAX_TEMPO, MIN_TEMPO, TIME_SIGNATURES } from "@/domain/song";
 import type { SongRepository } from "@/domain/song-repository";
+import { type InputError, optionalText, validateMusic } from "./song-input";
 
 export interface PublishSongInput {
   readonly title: string;
@@ -12,76 +11,28 @@ export interface PublishSongInput {
   readonly timeSignature: string;
   readonly source: string;
   readonly recordingUrls: readonly string[];
-}
-
-export type PublishField = "title" | "artist" | "key" | "tempo" | "timeSignature" | "source" | "recordings";
-
-export type PublishErrorCode =
-  | "required"
-  | "invalid_key"
-  | "invalid_tempo"
-  | "invalid_time_signature"
-  | "unknown_chord"
-  | "invalid_recording_url";
-
-export interface PublishError {
-  readonly field: PublishField;
-  readonly code: PublishErrorCode;
-  /** Extra context, such as the unknown chord and its line. */
-  readonly detail?: string;
+  /** Who wrote this chart; free text until user accounts exist. */
+  readonly authorName?: string;
 }
 
 export type PublishSongResult =
   | { readonly ok: true; readonly slug: string }
-  | { readonly ok: false; readonly errors: readonly PublishError[] };
+  | { readonly ok: false; readonly errors: readonly InputError[] };
 
-/**
- * ChordPro marks chords in brackets. Plain "chords over lyrics" text may also
- * use brackets, but only for section names such as [Coro], which never parse
- * as chords.
- */
-export function looksLikeChordPro(source: string): boolean {
-  for (const match of source.matchAll(/\[([^\]]+)\]/g)) {
-    if (parseChord(match[1] ?? "")) return true;
-  }
-  return /^\s*\{[a-z_]+.*\}\s*$/im.test(source);
-}
-
-/** Converts pasted text to ChordPro and lists any chords that did not parse. */
-export function prepareSource(source: string, keyText: string) {
-  const key = parseKey(keyText);
-  if (looksLikeChordPro(source)) {
-    return { chordpro: source, errors: key ? validateChordPro(source, key) : [] };
-  }
-  const imported = importChordsOverLyrics(source);
-  return { chordpro: imported.chordpro, errors: imported.errors };
-}
-
+/** Creates a song together with its first ("Original") arrangement. */
 export class PublishSong {
   constructor(private readonly songs: SongRepository) {}
 
   async execute(input: PublishSongInput): Promise<PublishSongResult> {
-    const errors: PublishError[] = [];
+    const errors: InputError[] = [];
     const title = input.title.trim();
     const artist = input.artist.trim();
-    const source = input.source.trim();
 
     if (!title) errors.push({ field: "title", code: "required" });
     if (!artist) errors.push({ field: "artist", code: "required" });
-    if (!source) errors.push({ field: "source", code: "required" });
 
-    const keyText = normalizeKeyInput(input.key);
-    const key = parseKey(keyText);
-    if (!key) errors.push({ field: "key", code: "invalid_key" });
-
-    const tempo = parseTempo(input.tempo);
-    if (tempo === null) errors.push({ field: "tempo", code: "required" });
-    if (tempo === undefined) errors.push({ field: "tempo", code: "invalid_tempo" });
-
-    const timeSignature = input.timeSignature.trim() || "4/4";
-    if (!(TIME_SIGNATURES as readonly string[]).includes(timeSignature)) {
-      errors.push({ field: "timeSignature", code: "invalid_time_signature" });
-    }
+    const { errors: musicErrors, music } = validateMusic(input, { optionalMeter: false });
+    errors.push(...musicErrors);
 
     const recordings: RecordingReference[] = [];
     for (const url of input.recordingUrls.map((u) => u.trim()).filter(Boolean)) {
@@ -90,23 +41,28 @@ export class PublishSong {
       else errors.push({ field: "recordings", code: "invalid_recording_url", detail: url });
     }
 
-    const prepared = source && key ? prepareSource(source, keyText) : null;
-    for (const chordError of prepared?.errors ?? []) {
-      errors.push({ field: "source", code: "unknown_chord", detail: `${chordError.symbol} (${chordError.line})` });
-    }
-
-    if (errors.length > 0 || !key || !prepared || tempo == null) return { ok: false, errors };
+    if (errors.length > 0 || !music) return { ok: false, errors };
 
     const slug = await this.uniqueSlug(slugify(title, artist) || "song");
-    const keyName = formatKey(key);
     await this.songs.create({
       slug,
       title,
       artist,
-      originalKey: keyName,
-      tempo,
-      timeSignature,
-      arrangement: { key: keyName, chordpro: prepared.chordpro },
+      originalKey: music.key,
+      tempo: music.tempo,
+      timeSignature: music.timeSignature ?? "4/4",
+      arrangement: {
+        slug: "original",
+        name: "Original",
+        kind: "original",
+        description: null,
+        authorName: optionalText(input.authorName ?? "", 80),
+        key: music.key,
+        // The song itself carries tempo and meter; the original inherits them.
+        tempo: null,
+        timeSignature: null,
+        chordpro: music.chordpro,
+      },
       recordings: dedupe(recordings),
     });
     return { ok: true, slug };
@@ -117,20 +73,6 @@ export class PublishSong {
     for (let n = 2; await this.songs.slugExists(candidate); n++) candidate = `${base}-${n}`;
     return candidate;
   }
-}
-
-/** Accepts lowercase input such as "g", "am" or "bb". */
-export function normalizeKeyInput(text: string): string {
-  return text.trim().replace(/^[a-g]/, (letter) => letter.toUpperCase());
-}
-
-/** Null when empty, undefined when invalid, otherwise a whole number in range. */
-function parseTempo(text: string): number | null | undefined {
-  const trimmed = text.trim();
-  if (trimmed === "") return null;
-  if (!/^\d+$/.test(trimmed)) return undefined;
-  const value = Number(trimmed);
-  return value >= MIN_TEMPO && value <= MAX_TEMPO ? value : undefined;
 }
 
 function dedupe(recordings: RecordingReference[]): RecordingReference[] {
