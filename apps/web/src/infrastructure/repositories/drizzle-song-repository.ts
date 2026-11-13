@@ -13,6 +13,8 @@ export class DrizzleSongRepository implements SongRepository {
       title: songs.title,
       artist: songs.artist,
       originalKey: songs.originalKey,
+      tempo: songs.tempo,
+      timeSignature: songs.timeSignature,
     };
     if (query === "") {
       return this.db.select(columns).from(songs).orderBy(desc(songs.createdAt)).limit(limit);

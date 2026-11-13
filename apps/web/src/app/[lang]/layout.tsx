@@ -57,8 +57,9 @@ export default async function RootLayout({ children, params }: LayoutProps<"/[la
             >
               {dict.nav.home}
             </Link>
-            <Link href={`/${lang}/songs/new`} className="btn-primary text-sm">
-              {dict.nav.upload}
+            <Link href={`/${lang}/songs/new`} className="btn-primary px-3 text-sm whitespace-nowrap sm:px-4">
+              <span className="sm:hidden">{dict.nav.uploadShort}</span>
+              <span className="hidden sm:inline">{dict.nav.upload}</span>
             </Link>
             <Suspense
               fallback={

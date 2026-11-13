@@ -8,7 +8,8 @@
     "upload": "Subir canción",
     "switchLanguage": "English",
     "themeToLight": "Cambiar a modo claro",
-    "themeToDark": "Cambiar a modo oscuro"
+    "themeToDark": "Cambiar a modo oscuro",
+    "uploadShort": "Subir"
   },
   "home": {
     "title": "Canciones",
@@ -18,7 +19,19 @@
     "empty": "Todavía no hay canciones. ¡Sube la primera!",
     "noResults": "No encontramos canciones para \"{query}\".",
     "loading": "Cargando canciones…",
-    "keyLabel": "Tono"
+    "keyLabel": "Tono",
+    "heroEyebrow": "Acordes para ensayar y tocar en vivo",
+    "heroTitle": "Acordes que se transportan bien",
+    "heroSubtitle": "Cambia de tono sin notas mal escritas, usa la cejilla sin hacer cuentas y practica con metrónomo y la grabación original.",
+    "resultsAll": "{count} canciones",
+    "resultsQuery": "{count} resultados para “{query}”",
+    "viewChart": "Ver acordes",
+    "emptyCta": "Subir la primera canción",
+    "noResultsHint": "Prueba con otro título o artista, o sube la canción tú.",
+    "tempoLabel": "Tempo",
+    "timeLabel": "Compás",
+    "resultsOne": "1 canción",
+    "resultsQueryOne": "1 resultado para “{query}”"
   },
   "song": {
     "by": "de",
@@ -75,8 +88,8 @@
     "intro": "Pega los acordes como los ves en otras webs (acordes sobre la letra) o en formato ChordPro. Revisamos cada acorde antes de publicar.",
     "titleLabel": "Título",
     "artistLabel": "Artista",
-    "keyLabel": "Tono en que está escrita",
-    "keyHelp": "Ej.: G, Am, Bb, F#m",
+    "keyLabel": "Tono",
+    "keyHelp": "En el que está escrita. Ej.: G, Am, Bb",
     "tempoLabel": "Tempo (BPM)",
     "tempoHelp": "Entre 30 y 300. ¿No lo sabes? Pulsa Tap al ritmo de la canción.",
     "timeSignatureLabel": "Compás",
@@ -98,7 +111,21 @@
       "invalid_recording_url": "Enlace no válido: {detail}",
       "unexpected": "No pudimos publicar la canción. Inténtalo de nuevo."
     },
-    "tap": "Tap"
+    "tap": "Tap",
+    "subtitle": "Pega los acordes como los copiarías de otra web. Revisamos cada acorde y te mostramos cómo queda antes de publicar.",
+    "formatHint": "Acordes en su propia línea, sobre la sílaba donde cambian, o entre [corchetes] en formato ChordPro.",
+    "notationHint": "Usamos notación americana (A, B, C…). Si pegas Do, Re, Mi te ofrecemos convertirlos.",
+    "chordIssueTitle": "Acordes por corregir",
+    "unknownChord": "«{symbol}» en la línea {lines}",
+    "didYouMean": "¿Quisiste decir {suggestion}?",
+    "noSuggestion": "No lo reconocemos: revisa cómo está escrito.",
+    "replace": "Usar {suggestion}",
+    "replaceAll": "Corregir todos",
+    "editTab": "Editar",
+    "previewTab": "Vista previa",
+    "untitled": "Sin título",
+    "unknownArtist": "Artista",
+    "keyShort": "Tono"
   },
   "notFound": {
     "title": "No encontramos esa página",

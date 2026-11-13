@@ -38,6 +38,8 @@ export interface SongSummary {
   readonly title: string;
   readonly artist: string;
   readonly originalKey: string;
+  readonly tempo: number | null;
+  readonly timeSignature: string;
 }
 
 export { TIME_SIGNATURES } from "./meter";

@@ -17,9 +17,17 @@ export default async function NewSongPage({ params }: PageProps<"/[lang]/songs/n
   const dict = await getDictionary(lang);
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold tracking-tight">{dict.upload.title}</h1>
-      <UploadForm action={publishSongAction.bind(null, lang)} labels={dict.upload} sections={dict.song.sections} />
+    <div className="flex flex-col gap-6">
+      <header className="max-w-3xl space-y-2">
+        <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">{dict.upload.title}</h1>
+        <p className="text-muted sm:text-lg">{dict.upload.subtitle}</p>
+      </header>
+      <UploadForm
+        action={publishSongAction.bind(null, lang)}
+        labels={dict.upload}
+        sections={dict.song.sections}
+        markings={dict.tempoMarkings}
+      />
     </div>
   );
 }

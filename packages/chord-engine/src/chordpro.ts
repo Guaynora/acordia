@@ -1,4 +1,5 @@
 import { type Key, formatKey, parseKey } from "./key";
+import { suggestChord } from "./suggest";
 import { transposeSymbol } from "./transpose";
 
 export interface ChordError {
@@ -6,6 +7,12 @@ export interface ChordError {
   readonly column: number;
   readonly symbol: string;
   readonly message: string;
+  /** Standard spelling to offer the author, e.g. "Bm" for "Hm". */
+  readonly suggestion: string | null;
+}
+
+export function chordError(line: number, column: number, symbol: string): ChordError {
+  return { line, column, symbol, message: `Unrecognized chord: "${symbol}"`, suggestion: suggestChord(symbol) };
 }
 
 export interface TransposeResult {
@@ -44,7 +51,7 @@ export function transposeChordPro(source: string, from: Key, to: Key): Transpose
       if (symbol.startsWith("*") || symbol.trim() === "") return whole;
       const result = transposeSymbol(symbol, from, to);
       if (!result.ok) {
-        errors.push({ line: index + 1, column: offset + 1, symbol, message: result.error });
+        errors.push(chordError(index + 1, offset + 1, symbol));
       }
       return `[${result.text}]`;
     });

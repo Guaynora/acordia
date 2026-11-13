@@ -7,3 +7,4 @@ export * from "./chordpro";
 export * from "./importer";
 export * from "./capo";
 export * from "./song";
+export * from "./suggest";

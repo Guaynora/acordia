@@ -41,7 +41,7 @@ describe("ChordPro", () => {
     if (!key) throw new Error("bad key");
     const errors = validateChordPro("[C]one\ntwo [Hm7]three", key);
     expect(errors).toEqual([
-      { line: 2, column: 5, symbol: "Hm7", message: 'Unrecognized chord: "Hm7"' },
+      { line: 2, column: 5, symbol: "Hm7", message: 'Unrecognized chord: "Hm7"', suggestion: "Bm7" },
     ]);
   });
 });

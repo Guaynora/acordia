@@ -8,7 +8,8 @@
     "upload": "Upload song",
     "switchLanguage": "Español",
     "themeToLight": "Switch to light mode",
-    "themeToDark": "Switch to dark mode"
+    "themeToDark": "Switch to dark mode",
+    "uploadShort": "Upload"
   },
   "home": {
     "title": "Songs",
@@ -18,7 +19,19 @@
     "empty": "No songs yet. Upload the first one!",
     "noResults": "No songs found for \"{query}\".",
     "loading": "Loading songs…",
-    "keyLabel": "Key"
+    "keyLabel": "Key",
+    "heroEyebrow": "Chords for rehearsal and the stage",
+    "heroTitle": "Chords that transpose correctly",
+    "heroSubtitle": "Change key without misspelled notes, use a capo without doing the math, and practice with a metronome and the original recording.",
+    "resultsAll": "{count} songs",
+    "resultsQuery": "{count} results for “{query}”",
+    "viewChart": "View chords",
+    "emptyCta": "Upload the first song",
+    "noResultsHint": "Try another title or artist, or upload the song yourself.",
+    "tempoLabel": "Tempo",
+    "timeLabel": "Time",
+    "resultsOne": "1 song",
+    "resultsQueryOne": "1 result for “{query}”"
   },
   "song": {
     "by": "by",
@@ -75,8 +88,8 @@
     "intro": "Paste chords the way other sites show them (chords over lyrics) or in ChordPro. Every chord is checked before publishing.",
     "titleLabel": "Title",
     "artistLabel": "Artist",
-    "keyLabel": "Key it is written in",
-    "keyHelp": "e.g. G, Am, Bb, F#m",
+    "keyLabel": "Key",
+    "keyHelp": "The one it's written in. e.g. G, Am, Bb",
     "tempoLabel": "Tempo (BPM)",
     "tempoHelp": "30 to 300. Don't know it? Press Tap along with the song.",
     "timeSignatureLabel": "Time signature",
@@ -98,7 +111,21 @@
       "invalid_recording_url": "Invalid link: {detail}",
       "unexpected": "We couldn't publish the song. Please try again."
     },
-    "tap": "Tap"
+    "tap": "Tap",
+    "subtitle": "Paste chords the way you would copy them from another site. We check every chord and show how it looks before publishing.",
+    "formatHint": "Chords on their own line, above the syllable where they change, or in [brackets] (ChordPro).",
+    "notationHint": "We use letter notation (A, B, C…). If you paste Do, Re, Mi we offer to convert them.",
+    "chordIssueTitle": "Chords to fix",
+    "unknownChord": "“{symbol}” on line {lines}",
+    "didYouMean": "Did you mean {suggestion}?",
+    "noSuggestion": "We don't recognize it: check how it's written.",
+    "replace": "Use {suggestion}",
+    "replaceAll": "Fix all",
+    "editTab": "Edit",
+    "previewTab": "Preview",
+    "untitled": "Untitled",
+    "unknownArtist": "Artist",
+    "keyShort": "Key"
   },
   "notFound": {
     "title": "We couldn't find that page",

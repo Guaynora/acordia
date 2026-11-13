@@ -1,6 +1,7 @@
 import { isNonChordMarker, parseChord } from "./chord";
-import type { ChordError } from "./chordpro";
+import { type ChordError, chordError } from "./chordpro";
 import { sectionKindFromLabel } from "./song";
+import { suggestChord } from "./suggest";
 
 export interface ImportResult {
   readonly chordpro: string;
@@ -30,15 +31,19 @@ type LineKind =
   | { readonly kind: "text" };
 
 /**
- * A line is a chord line when at least half of its tokens are chords; the
- * rest are reported as unknown so the author fixes them before publishing.
+ * A line is a chord line when at least half of its tokens are chords, or
+ * when every token is a chord in another notation (Latin "Lam", German "H").
+ * Tokens that are not standard chords are reported so the author fixes them
+ * before publishing.
  */
 function classify(line: string): LineKind {
   const tokens = tokenize(line).filter((t) => !LINE_DECORATION.test(t.text));
   if (tokens.length === 0) return { kind: "text" };
   const chords = tokens.filter((t) => isNonChordMarker(t.text) || parseChord(t.text));
   const realChords = chords.filter((t) => !isNonChordMarker(t.text));
-  if (realChords.length === 0 || chords.length * 2 < tokens.length) return { kind: "text" };
+  const allChordLike = tokens.every((t) => chords.includes(t) || suggestChord(t.text));
+  const mostlyChords = realChords.length > 0 && chords.length * 2 >= tokens.length;
+  if (!mostlyChords && !allChordLike) return { kind: "text" };
   const unknown = tokens.filter((t) => !chords.includes(t));
   return { kind: "chords", tokens, unknown };
 }
@@ -106,12 +111,7 @@ export function importChordsOverLyrics(text: string): ImportResult {
     }
 
     for (const token of kind.unknown) {
-      errors.push({
-        line: i + 1,
-        column: token.column + 1,
-        symbol: token.text,
-        message: `Unrecognized chord: "${token.text}"`,
-      });
+      errors.push(chordError(i + 1, token.column + 1, token.text));
     }
 
     const next = lines.at(i + 1);
