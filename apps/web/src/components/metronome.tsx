@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { type Accent, METERS, type Meter, meterFor, secondsPerClick } from "@/domain/meter";
 import { format } from "@/i18n/format";
 
 export interface MetronomeLabels {
@@ -12,6 +13,9 @@ export interface MetronomeLabels {
   readonly slower: string;
   readonly faster: string;
   readonly beat: string;
+  readonly timeSignature: string;
+  readonly compoundHint: string;
+  readonly oddHint: string;
 }
 
 const MIN_BPM = 30;
@@ -21,43 +25,59 @@ const LOOKAHEAD_MS = 25;
 /** How far ahead clicks are scheduled on the audio clock, in seconds. */
 const SCHEDULE_AHEAD_S = 0.1;
 
+const CLICK: Record<Accent, { frequency: number; volume: number }> = {
+  0: { frequency: 1600, volume: 0.9 },
+  1: { frequency: 1250, volume: 0.7 },
+  2: { frequency: 1000, volume: 0.45 },
+};
+
 const clamp = (bpm: number) => Math.min(MAX_BPM, Math.max(MIN_BPM, Math.round(bpm)));
 
 /**
  * Clicks are scheduled on the Web Audio clock a little ahead of time instead
- * of being fired from setInterval, which drifts and sounds uneven.
+ * of being fired from setInterval, which drifts and sounds uneven. Tempo and
+ * time signature can change while it plays; the next click picks them up.
  */
 export function Metronome({
   initialBpm,
-  beatsPerBar,
+  initialTimeSignature,
   labels,
 }: {
   initialBpm: number;
-  beatsPerBar: number;
+  initialTimeSignature: string;
   labels: MetronomeLabels;
 }) {
   const [bpm, setBpm] = useState(clamp(initialBpm));
+  const [meter, setMeter] = useState<Meter>(() => meterFor(initialTimeSignature));
   const [running, setRunning] = useState(false);
-  const [beat, setBeat] = useState<number | null>(null);
+  const [click, setClick] = useState<number | null>(null);
 
   const bpmRef = useRef(bpm);
+  const meterRef = useRef(meter);
   const contextRef = useRef<AudioContext | null>(null);
   const timerRef = useRef<number | null>(null);
   const frameRef = useRef<number | null>(null);
-  const nextNoteTime = useRef(0);
-  const nextBeat = useRef(0);
-  const queue = useRef<{ beat: number; time: number }[]>([]);
+  const nextClickTime = useRef(0);
+  const nextClick = useRef(0);
+  const queue = useRef<{ click: number; time: number }[]>([]);
   const taps = useRef<number[]>([]);
 
   useEffect(() => {
     bpmRef.current = bpm;
   }, [bpm]);
 
-  const click = useCallback((context: AudioContext, accent: boolean, time: number) => {
+  useEffect(() => {
+    meterRef.current = meter;
+    // Restart counting from the downbeat in the new meter.
+    nextClick.current = 0;
+  }, [meter]);
+
+  const sound = useCallback((context: AudioContext, accent: Accent, time: number) => {
+    const { frequency, volume } = CLICK[accent];
     const oscillator = context.createOscillator();
     const gain = context.createGain();
-    oscillator.frequency.value = accent ? 1600 : 1000;
-    gain.gain.setValueAtTime(accent ? 0.9 : 0.6, time);
+    oscillator.frequency.value = frequency;
+    gain.gain.setValueAtTime(volume, time);
     gain.gain.exponentialRampToValueAtTime(0.001, time + 0.04);
     oscillator.connect(gain).connect(context.destination);
     oscillator.start(time);
@@ -71,7 +91,7 @@ export function Metronome({
     frameRef.current = null;
     queue.current = [];
     setRunning(false);
-    setBeat(null);
+    setClick(null);
   }, []);
 
   const start = useCallback(async () => {
@@ -79,29 +99,31 @@ export function Metronome({
     contextRef.current = context;
     await context.resume();
 
-    nextBeat.current = 0;
-    nextNoteTime.current = context.currentTime + 0.05;
+    nextClick.current = 0;
+    nextClickTime.current = context.currentTime + 0.05;
 
     timerRef.current = window.setInterval(() => {
-      while (nextNoteTime.current < context.currentTime + SCHEDULE_AHEAD_S) {
-        click(context, nextBeat.current === 0, nextNoteTime.current);
-        queue.current.push({ beat: nextBeat.current, time: nextNoteTime.current });
-        nextNoteTime.current += 60 / bpmRef.current;
-        nextBeat.current = (nextBeat.current + 1) % beatsPerBar;
+      while (nextClickTime.current < context.currentTime + SCHEDULE_AHEAD_S) {
+        const current = meterRef.current;
+        const index = nextClick.current % current.accents.length;
+        sound(context, current.accents[index] ?? 2, nextClickTime.current);
+        queue.current.push({ click: index, time: nextClickTime.current });
+        nextClickTime.current += secondsPerClick(current, bpmRef.current);
+        nextClick.current = (index + 1) % current.accents.length;
       }
     }, LOOKAHEAD_MS);
 
     const draw = () => {
       let current: number | null = null;
       while (queue.current.length > 0 && (queue.current[0]?.time ?? Infinity) <= context.currentTime) {
-        current = queue.current.shift()?.beat ?? null;
+        current = queue.current.shift()?.click ?? null;
       }
-      if (current !== null) setBeat(current);
+      if (current !== null) setClick(current);
       frameRef.current = requestAnimationFrame(draw);
     };
     frameRef.current = requestAnimationFrame(draw);
     setRunning(true);
-  }, [beatsPerBar, click]);
+  }, [sound]);
 
   useEffect(
     () => () => {
@@ -123,10 +145,24 @@ export function Metronome({
     }
   };
 
+  const hint = meter.kind === "compound" ? labels.compoundHint : meter.kind === "odd" ? labels.oddHint : null;
+
   return (
     <section aria-label={labels.title} className="rounded-xl border border-border bg-card p-4">
       <div className="flex flex-wrap items-center gap-3">
         <h2 className="mr-auto text-sm font-semibold uppercase tracking-wide text-muted">{labels.title}</h2>
+        <label className="flex items-center gap-2 text-sm">
+          <span className="text-muted">{labels.timeSignature}</span>
+          <select
+            value={meter.signature}
+            onChange={(e) => setMeter(meterFor(e.target.value))}
+            className="rounded-md border border-border bg-background px-2 py-1.5"
+          >
+            {METERS.map((m) => (
+              <option key={m.signature}>{m.signature}</option>
+            ))}
+          </select>
+        </label>
         <div className="flex items-center gap-1" role="group" aria-label={labels.bpm}>
           <button type="button" className="btn-icon" onClick={() => setBpm((b) => clamp(b - 1))} aria-label={labels.slower}>
             −
@@ -154,18 +190,20 @@ export function Metronome({
           {running ? labels.stop : labels.start}
         </button>
       </div>
-      <div className="mt-3 flex gap-2" aria-hidden="true">
-        {Array.from({ length: beatsPerBar }, (_, i) => (
+
+      <div className="mt-3 flex items-end gap-1.5" aria-hidden="true">
+        {meter.accents.map((accent, i) => (
           <span
-            key={i}
-            className={`h-3 flex-1 rounded-full transition-colors duration-75 ${
-              beat === i ? (i === 0 ? "bg-accent" : "bg-foreground") : "bg-border"
-            }`}
+            key={`${meter.signature}-${i}`}
+            className={`flex-1 rounded-full transition-colors duration-75 ${
+              accent === 0 ? "h-4" : accent === 1 ? "h-3" : "h-2"
+            } ${click === i ? (accent === 0 ? "bg-accent" : "bg-foreground") : "bg-border"}`}
           />
         ))}
       </div>
+      {hint && <p className="mt-2 text-xs text-muted">{hint}</p>}
       <p className="sr-only" aria-live="off">
-        {beat !== null ? format(labels.beat, { beat: beat + 1, total: beatsPerBar }) : ""}
+        {click !== null ? format(labels.beat, { beat: click + 1, total: meter.accents.length }) : ""}
       </p>
     </section>
   );

@@ -40,8 +40,7 @@ export interface SongSummary {
   readonly originalKey: string;
 }
 
-export const TIME_SIGNATURES = ["2/4", "3/4", "4/4", "6/8", "12/8"] as const;
-export type TimeSignature = (typeof TIME_SIGNATURES)[number];
+export { TIME_SIGNATURES } from "./meter";
 
 export const MIN_TEMPO = 30;
 export const MAX_TEMPO = 300;

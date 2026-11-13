@@ -30,7 +30,7 @@
     "noCapo": "Sin cejilla",
     "capoOption": "Traste {fret} (posiciones de {key})",
     "capoSuggested": "sugerida",
-    "playShapes": "Toca posiciones de {key} con cejilla en el traste {fret}.",
+    "playShapes": "Suena en {sounding}. Con cejilla en el traste {fret} tocas posiciones de {key}.",
     "tempo": "{bpm} BPM",
     "recordings": "Grabaciones",
     "chordErrors": "Esta canción tiene acordes que no se pudieron transportar: {chords}",
@@ -40,7 +40,9 @@
       "bridge": "Puente",
       "tab": "Tablatura",
       "grid": "Acordes"
-    }
+    },
+    "keyHelp": "Cambia lo que suena: súbelo o bájalo para cantar cómodo.",
+    "capoHelp": "No cambia lo que suena: cambia las posiciones que tocas en la guitarra."
   },
   "metronome": {
     "title": "Metrónomo",
@@ -50,7 +52,10 @@
     "bpm": "BPM",
     "slower": "Más lento",
     "faster": "Más rápido",
-    "beat": "Pulso {beat} de {total}"
+    "beat": "Pulso {beat} de {total}",
+    "timeSignature": "Compás",
+    "compoundHint": "En compases compuestos el BPM cuenta la negra con puntillo (cada pulso son 3 corcheas).",
+    "oddHint": "En compases irregulares el BPM cuenta corcheas; los acentos marcan los grupos (7/8 = 2+2+3)."
   },
   "upload": {
     "title": "Subir canción",

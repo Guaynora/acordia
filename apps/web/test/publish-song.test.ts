@@ -88,7 +88,7 @@ describe("PublishSong", () => {
       artist: "",
       key: "H",
       tempo: "999",
-      timeSignature: "5/4",
+      timeSignature: "9/16",
       source: "",
       recordingUrls: ["https://example.com/song"],
     });

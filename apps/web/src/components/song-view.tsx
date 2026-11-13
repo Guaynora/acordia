@@ -16,11 +16,13 @@ import { ChordSheet, type SectionLabels } from "./chord-sheet";
 
 export interface SongViewLabels {
   readonly key: string;
+  readonly keyHelp: string;
   readonly originalKey: string;
   readonly transposeDown: string;
   readonly transposeUp: string;
   readonly reset: string;
   readonly capo: string;
+  readonly capoHelp: string;
   readonly noCapo: string;
   readonly capoOption: string;
   readonly capoSuggested: string;
@@ -68,47 +70,63 @@ export function SongView({
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-xl border border-border bg-card p-4">
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted">{labels.key}</span>
-          <button type="button" className="btn-icon" onClick={() => step(-1)} aria-label={labels.transposeDown}>
-            −
-          </button>
-          <output className="min-w-12 text-center text-xl font-bold tabular-nums" aria-live="polite">
-            {formatKey(view.sounding)}
-          </output>
-          <button type="button" className="btn-icon" onClick={() => step(1)} aria-label={labels.transposeUp}>
-            +
-          </button>
-          {semitones !== 0 && (
-            <button type="button" className="text-sm text-accent underline-offset-2 hover:underline" onClick={() => setSemitones(0)}>
-              {labels.reset}
+      <div className="grid gap-4 rounded-xl border border-border bg-card p-4 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-medium">{labels.key}</span>
+            <button type="button" className="btn-icon" onClick={() => step(-1)} aria-label={labels.transposeDown}>
+              −
             </button>
-          )}
+            <output className="min-w-12 text-center text-xl font-bold tabular-nums" aria-live="polite">
+              {formatKey(view.sounding)}
+            </output>
+            <button type="button" className="btn-icon" onClick={() => step(1)} aria-label={labels.transposeUp}>
+              +
+            </button>
+            {semitones !== 0 && (
+              <button
+                type="button"
+                className="text-sm text-accent underline-offset-2 hover:underline"
+                onClick={() => setSemitones(0)}
+              >
+                {labels.reset}
+              </button>
+            )}
+          </div>
+          <p className="text-xs text-muted">
+            {labels.keyHelp} {format(labels.originalKey, { key: writtenKey })}
+          </p>
         </div>
 
-        <label className="flex items-center gap-2 text-sm">
-          <span className="text-muted">{labels.capo}</span>
-          <select
-            value={capo}
-            onChange={(e) => setCapo(Number(e.target.value))}
-            className="rounded-md border border-border bg-background px-2 py-1.5"
-          >
-            <option value={0}>{labels.noCapo}</option>
-            {Array.from({ length: MAX_CAPO }, (_, i) => i + 1).map((fret) => (
-              <option key={fret} value={fret}>
-                {format(labels.capoOption, { fret, key: formatKey(shapeKey(view.sounding, fret)) })}
-                {view.suggested.has(fret) ? ` · ${labels.capoSuggested}` : ""}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <span className="text-sm text-muted">{format(labels.originalKey, { key: writtenKey })}</span>
+        <div className="space-y-1.5">
+          <label className="flex flex-wrap items-center gap-2 text-sm">
+            <span className="font-medium">{labels.capo}</span>
+            <select
+              value={capo}
+              onChange={(e) => setCapo(Number(e.target.value))}
+              className="rounded-md border border-border bg-background px-2 py-1.5"
+            >
+              <option value={0}>{labels.noCapo}</option>
+              {Array.from({ length: MAX_CAPO }, (_, i) => i + 1).map((fret) => (
+                <option key={fret} value={fret}>
+                  {format(labels.capoOption, { fret, key: formatKey(shapeKey(view.sounding, fret)) })}
+                  {view.suggested.has(fret) ? ` · ${labels.capoSuggested}` : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+          <p className="text-xs text-muted">{labels.capoHelp}</p>
+        </div>
       </div>
 
       {capo > 0 && (
-        <p className="text-sm text-muted">{format(labels.playShapes, { key: formatKey(view.shapes), fret: capo })}</p>
+        <p className="rounded-lg bg-accent/10 px-3 py-2 text-sm">
+          {format(labels.playShapes, {
+            sounding: formatKey(view.sounding),
+            key: formatKey(view.shapes),
+            fret: capo,
+          })}
+        </p>
       )}
 
       {view.errors.length > 0 && (

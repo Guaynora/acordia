@@ -30,7 +30,7 @@
     "noCapo": "No capo",
     "capoOption": "Fret {fret} ({key} shapes)",
     "capoSuggested": "suggested",
-    "playShapes": "Play {key} shapes with the capo on fret {fret}.",
+    "playShapes": "Sounds in {sounding}. With the capo on fret {fret} you play {key} shapes.",
     "tempo": "{bpm} BPM",
     "recordings": "Recordings",
     "chordErrors": "This song has chords that could not be transposed: {chords}",
@@ -40,7 +40,9 @@
       "bridge": "Bridge",
       "tab": "Tab",
       "grid": "Chords"
-    }
+    },
+    "keyHelp": "Changes what you hear: raise or lower it to sing comfortably.",
+    "capoHelp": "Doesn't change what you hear: it changes the shapes you play on guitar."
   },
   "metronome": {
     "title": "Metronome",
@@ -50,7 +52,10 @@
     "bpm": "BPM",
     "slower": "Slower",
     "faster": "Faster",
-    "beat": "Beat {beat} of {total}"
+    "beat": "Beat {beat} of {total}",
+    "timeSignature": "Time signature",
+    "compoundHint": "In compound meters BPM counts the dotted quarter (each beat is 3 eighth notes).",
+    "oddHint": "In odd meters BPM counts eighth notes; accents mark the groups (7/8 = 2+2+3)."
   },
   "upload": {
     "title": "Upload song",

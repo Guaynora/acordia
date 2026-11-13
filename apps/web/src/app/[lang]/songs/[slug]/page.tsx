@@ -29,8 +29,6 @@ async function SongContent({ params, dict }: { params: Promise<{ slug: string }>
   const arrangement = song?.arrangements[0];
   if (!song || !arrangement) notFound();
 
-  const beatsPerBar = Number(song.timeSignature.split("/")[0]) || 4;
-
   return (
     <article className="space-y-6">
       <header className="space-y-1">
@@ -41,7 +39,7 @@ async function SongContent({ params, dict }: { params: Promise<{ slug: string }>
         </p>
       </header>
 
-      <Metronome initialBpm={song.tempo ?? 90} beatsPerBar={beatsPerBar} labels={dict.metronome} />
+      <Metronome initialBpm={song.tempo ?? 90} initialTimeSignature={song.timeSignature} labels={dict.metronome} />
 
       <SongView chordpro={arrangement.chordpro} writtenKey={arrangement.key} labels={dict.song} />
 
