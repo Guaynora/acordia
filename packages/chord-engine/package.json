@@ -1,0 +1,19 @@
+{
+  "name": "@acordia/chord-engine",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Chord parsing and key-aware transposition with correct enharmonic spelling.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0"
+  }
+}

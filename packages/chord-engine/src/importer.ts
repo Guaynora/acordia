@@ -1,0 +1,107 @@
+import { isNonChordMarker, parseChord } from "./chord.js";
+import type { ChordError } from "./chordpro.js";
+
+export interface ImportResult {
+  readonly chordpro: string;
+  readonly errors: readonly ChordError[];
+}
+
+interface Token {
+  readonly text: string;
+  readonly column: number;
+}
+
+/** Repeat marks and similar notes that may sit on a chord line. */
+const LINE_DECORATION = /^\(?x\d+\)?$/i;
+const SECTION_IN_BRACKETS = /^\s*\[([^\]]+)\]\s*$/;
+const SECTION_WITH_COLON = /^\s*([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ0-9 .]{0,30}):\s*$/;
+
+function tokenize(line: string): Token[] {
+  const tokens: Token[] = [];
+  for (const match of line.matchAll(/\S+/g)) {
+    tokens.push({ text: match[0], column: match.index ?? 0 });
+  }
+  return tokens;
+}
+
+type LineKind =
+  | { readonly kind: "chords"; readonly tokens: Token[]; readonly unknown: Token[] }
+  | { readonly kind: "text" };
+
+/**
+ * A line is a chord line when at least half of its tokens are chords; the
+ * rest are reported as unknown so the author fixes them before publishing.
+ */
+function classify(line: string): LineKind {
+  const tokens = tokenize(line).filter((t) => !LINE_DECORATION.test(t.text));
+  if (tokens.length === 0) return { kind: "text" };
+  const chords = tokens.filter((t) => isNonChordMarker(t.text) || parseChord(t.text));
+  const realChords = chords.filter((t) => !isNonChordMarker(t.text));
+  if (realChords.length === 0 || chords.length * 2 < tokens.length) return { kind: "text" };
+  const unknown = tokens.filter((t) => !chords.includes(t));
+  return { kind: "chords", tokens, unknown };
+}
+
+function sectionName(line: string): string | null {
+  const bracketed = SECTION_IN_BRACKETS.exec(line);
+  if (bracketed && !parseChord(bracketed[1] ?? "")) return (bracketed[1] ?? "").trim();
+  const colon = SECTION_WITH_COLON.exec(line);
+  if (colon && !parseChord(colon[1] ?? "")) return (colon[1] ?? "").trim();
+  return null;
+}
+
+/** Places each chord into the lyric line at the column where it stood. */
+function mergeChordsIntoLyrics(chords: Token[], lyrics: string): string {
+  const width = Math.max(lyrics.length, ...chords.map((c) => c.column));
+  let merged = lyrics.padEnd(width);
+  for (const chord of [...chords].reverse()) {
+    merged = `${merged.slice(0, chord.column)}[${chord.text}]${merged.slice(chord.column)}`;
+  }
+  return merged.trimEnd();
+}
+
+/**
+ * Converts the common "chords over lyrics" plain-text layout (as found on
+ * most chord sites) into ChordPro.
+ */
+export function importChordsOverLyrics(text: string): ImportResult {
+  const lines = text.replace(/\r\n?/g, "\n").replace(/\t/g, "    ").split("\n");
+  const output: string[] = [];
+  const errors: ChordError[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines.at(i) ?? "";
+    const section = sectionName(line);
+    if (section) {
+      output.push(`{comment: ${section}}`);
+      continue;
+    }
+
+    const kind = classify(line);
+    if (kind.kind === "text") {
+      output.push(line.trimEnd());
+      continue;
+    }
+
+    for (const token of kind.unknown) {
+      errors.push({
+        line: i + 1,
+        column: token.column + 1,
+        symbol: token.text,
+        message: `Unrecognized chord: "${token.text}"`,
+      });
+    }
+
+    const next = lines.at(i + 1);
+    const nextIsLyrics =
+      next !== undefined && next.trim() !== "" && classify(next).kind === "text" && !sectionName(next);
+    if (nextIsLyrics) {
+      output.push(mergeChordsIntoLyrics(kind.tokens, next));
+      i++;
+    } else {
+      output.push(kind.tokens.map((t) => `[${t.text}]`).join(" "));
+    }
+  }
+
+  return { chordpro: output.join("\n"), errors };
+}
