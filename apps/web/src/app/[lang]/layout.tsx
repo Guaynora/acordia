@@ -4,6 +4,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { THEME_SCRIPT } from "@/components/theme-script";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { LOCALES, hasLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionaries";
 import "../globals.css";
@@ -33,7 +35,15 @@ export default async function RootLayout({ children, params }: LayoutProps<"/[la
   const other = lang === "es" ? "en" : "es";
 
   return (
-    <html lang={lang} className={`${display.variable} ${body.variable} ${mono.variable} h-full antialiased`}>
+    // The head script sets data-theme before hydration, so React must accept it.
+    <html
+      lang={lang}
+      className={`${display.variable} ${body.variable} ${mono.variable} h-full antialiased`}
+      suppressHydrationWarning
+    >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className="flex min-h-full flex-col">
         <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur">
           <nav className="mx-auto flex max-w-7xl items-center gap-2 px-4 py-3 sm:gap-4 sm:px-6 lg:px-8">
@@ -59,6 +69,7 @@ export default async function RootLayout({ children, params }: LayoutProps<"/[la
             >
               <LanguageSwitcher current={lang} label={dict.nav.switchLanguage} />
             </Suspense>
+            <ThemeToggle toLight={dict.nav.themeToLight} toDark={dict.nav.themeToDark} />
           </nav>
         </header>
         <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</main>

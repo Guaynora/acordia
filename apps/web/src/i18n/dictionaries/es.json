@@ -6,7 +6,9 @@
   "nav": {
     "home": "Canciones",
     "upload": "Subir canción",
-    "switchLanguage": "English"
+    "switchLanguage": "English",
+    "themeToLight": "Cambiar a modo claro",
+    "themeToDark": "Cambiar a modo oscuro"
   },
   "home": {
     "title": "Canciones",

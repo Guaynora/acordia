@@ -6,7 +6,9 @@
   "nav": {
     "home": "Songs",
     "upload": "Upload song",
-    "switchLanguage": "Español"
+    "switchLanguage": "Español",
+    "themeToLight": "Switch to light mode",
+    "themeToDark": "Switch to dark mode"
   },
   "home": {
     "title": "Songs",

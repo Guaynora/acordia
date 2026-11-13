@@ -1,10 +1,14 @@
 @import "tailwindcss";
 
+/* `dark:` utilities follow the resolved theme on <html>. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 /*
  * "Warm Wood Studio" design system (see Stitch DESIGN.md).
  * Light: ivory paper and terracotta ink. Dark: "Roasted Walnut" for stages.
  */
 :root {
+  color-scheme: light;
   --background: #faf8f5;
   --card: #ffffff;
   --surface: #f4f0ea;
@@ -25,8 +29,32 @@
   --elevated-shadow: 0 4px 20px -2px rgb(28 25 23 / 0.06);
 }
 
+/* Dark tokens: chosen with the theme toggle, or from the system when no choice is saved. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #181513;
+  --card: #211d1a;
+  --surface: #2a2521;
+  --surface-strong: #332d29;
+  --foreground: #f5f2eb;
+  --muted: #b3a79d;
+  --border: #2f2925;
+  --border-strong: #3d3530;
+  --accent: #e06d44;
+  --accent-foreground: #1c1917;
+  --accent-soft: #3a2219;
+  --secondary: #4a9294;
+  --secondary-foreground: #0f1a1a;
+  --secondary-soft: #1e2b2c;
+  --danger: #ffb4ab;
+  --danger-soft: #3d1512;
+  --elevated-shadow: 0 4px 24px -2px rgb(0 0 0 / 0.45);
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
+  /* Fallback before the theme script runs or without JavaScript. */
+  :root:not([data-theme]) {
+    color-scheme: dark;
     --background: #181513;
     --card: #211d1a;
     --surface: #2a2521;
