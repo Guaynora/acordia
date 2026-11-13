@@ -82,6 +82,11 @@ describe("PublishSong", () => {
     expect(repository.songs).toHaveLength(0);
   });
 
+  it("requires a tempo", async () => {
+    const result = await new PublishSong(new InMemorySongRepository()).execute({ ...VALID, tempo: " " });
+    expect(result).toEqual({ ok: false, errors: [{ field: "tempo", code: "required" }] });
+  });
+
   it("reports every invalid field at once", async () => {
     const result = await new PublishSong(new InMemorySongRepository()).execute({
       title: " ",

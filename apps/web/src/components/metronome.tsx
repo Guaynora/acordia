@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { type Accent, METERS, type Meter, meterFor, secondsPerClick } from "@/domain/meter";
+import { type TempoMarking, tempoMarking } from "@/domain/tempo";
 import { format } from "@/i18n/format";
 
 export interface MetronomeLabels {
@@ -16,7 +17,13 @@ export interface MetronomeLabels {
   readonly timeSignature: string;
   readonly compoundHint: string;
   readonly oddHint: string;
+  readonly songTempo: string;
+  readonly songNoTempo: string;
+  readonly backToSong: string;
+  readonly relative: string;
 }
+
+const DEFAULT_BPM = 90;
 
 const MIN_BPM = 30;
 const MAX_BPM = 300;
@@ -39,16 +46,20 @@ const clamp = (bpm: number) => Math.min(MAX_BPM, Math.max(MIN_BPM, Math.round(bp
  * time signature can change while it plays; the next click picks them up.
  */
 export function Metronome({
-  initialBpm,
-  initialTimeSignature,
+  songBpm,
+  songTimeSignature,
   labels,
+  markings,
 }: {
-  initialBpm: number;
-  initialTimeSignature: string;
+  /** The song's own tempo, or null when the author gave none. */
+  songBpm: number | null;
+  songTimeSignature: string;
   labels: MetronomeLabels;
+  markings: Record<TempoMarking, string>;
 }) {
-  const [bpm, setBpm] = useState(clamp(initialBpm));
-  const [meter, setMeter] = useState<Meter>(() => meterFor(initialTimeSignature));
+  const songMeter = meterFor(songTimeSignature);
+  const [bpm, setBpm] = useState(clamp(songBpm ?? DEFAULT_BPM));
+  const [meter, setMeter] = useState<Meter>(songMeter);
   const [running, setRunning] = useState(false);
   const [click, setClick] = useState<number | null>(null);
 
@@ -145,12 +156,30 @@ export function Metronome({
     }
   };
 
+  const changed = (songBpm !== null && bpm !== songBpm) || meter.signature !== songMeter.signature;
+  const resetToSong = () => {
+    setBpm(clamp(songBpm ?? DEFAULT_BPM));
+    setMeter(songMeter);
+  };
+
   const hint = meter.kind === "compound" ? labels.compoundHint : meter.kind === "odd" ? labels.oddHint : null;
 
   return (
     <section aria-label={labels.title} className="rounded-xl border border-border bg-card p-4">
+      <div className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">{labels.title}</h2>
+        <p className="text-sm">
+          {songBpm !== null
+            ? format(labels.songTempo, { bpm: songBpm, signature: songMeter.signature })
+            : format(labels.songNoTempo, { signature: songMeter.signature })}
+        </p>
+        {changed && (
+          <button type="button" className="text-sm text-accent underline-offset-2 hover:underline" onClick={resetToSong}>
+            {labels.backToSong}
+          </button>
+        )}
+      </div>
       <div className="flex flex-wrap items-center gap-3">
-        <h2 className="mr-auto text-sm font-semibold uppercase tracking-wide text-muted">{labels.title}</h2>
         <label className="flex items-center gap-2 text-sm">
           <span className="text-muted">{labels.timeSignature}</span>
           <select
@@ -201,7 +230,13 @@ export function Metronome({
           />
         ))}
       </div>
-      {hint && <p className="mt-2 text-xs text-muted">{hint}</p>}
+      <p className="mt-2 text-xs text-muted">
+        {markings[tempoMarking(bpm)]}
+        {songBpm !== null && bpm !== songBpm
+          ? ` · ${format(labels.relative, { percent: Math.round((bpm / songBpm) * 100) })}`
+          : ""}
+      </p>
+      {hint && <p className="mt-1 text-xs text-muted">{hint}</p>}
       <p className="sr-only" aria-live="off">
         {click !== null ? format(labels.beat, { beat: click + 1, total: meter.accents.length }) : ""}
       </p>

@@ -42,7 +42,10 @@
       "grid": "Acordes"
     },
     "keyHelp": "Cambia lo que suena: súbelo o bájalo para cantar cómodo.",
-    "capoHelp": "No cambia lo que suena: cambia las posiciones que tocas en la guitarra."
+    "capoHelp": "No cambia lo que suena: cambia las posiciones que tocas en la guitarra.",
+    "tempoLabel": "Tempo",
+    "timeSignatureLabel": "Compás",
+    "noTempo": "Sin tempo indicado"
   },
   "metronome": {
     "title": "Metrónomo",
@@ -55,7 +58,11 @@
     "beat": "Pulso {beat} de {total}",
     "timeSignature": "Compás",
     "compoundHint": "En compases compuestos el BPM cuenta la negra con puntillo (cada pulso son 3 corcheas).",
-    "oddHint": "En compases irregulares el BPM cuenta corcheas; los acentos marcan los grupos (7/8 = 2+2+3)."
+    "oddHint": "En compases irregulares el BPM cuenta corcheas; los acentos marcan los grupos (7/8 = 2+2+3).",
+    "songTempo": "Tempo de la canción: {bpm} BPM · {signature}",
+    "songNoTempo": "La canción no indica tempo · {signature}",
+    "backToSong": "Volver al tempo de la canción",
+    "relative": "{percent}% del tempo original"
   },
   "upload": {
     "title": "Subir canción",
@@ -65,7 +72,7 @@
     "keyLabel": "Tono en que está escrita",
     "keyHelp": "Ej.: G, Am, Bb, F#m",
     "tempoLabel": "Tempo (BPM)",
-    "tempoHelp": "Opcional, entre 30 y 300",
+    "tempoHelp": "Entre 30 y 300. ¿No lo sabes? Pulsa Tap al ritmo de la canción.",
     "timeSignatureLabel": "Compás",
     "sourceLabel": "Acordes y letra",
     "sourcePlaceholder": "G         D/F#\nCaminando por la calle\nEm7        C\nbajo un cielo de plata",
@@ -84,10 +91,19 @@
       "unknown_chord": "Acorde no reconocido: {detail}",
       "invalid_recording_url": "Enlace no válido: {detail}",
       "unexpected": "No pudimos publicar la canción. Inténtalo de nuevo."
-    }
+    },
+    "tap": "Tap"
   },
   "notFound": {
     "title": "No encontramos esa página",
     "back": "Volver a las canciones"
+  },
+  "tempoMarkings": {
+    "largo": "Largo · muy lento",
+    "adagio": "Adagio · lento",
+    "andante": "Andante · tranquilo",
+    "moderato": "Moderato · moderado",
+    "allegro": "Allegro · rápido",
+    "presto": "Presto · muy rápido"
   }
 }

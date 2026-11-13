@@ -42,7 +42,10 @@
       "grid": "Chords"
     },
     "keyHelp": "Changes what you hear: raise or lower it to sing comfortably.",
-    "capoHelp": "Doesn't change what you hear: it changes the shapes you play on guitar."
+    "capoHelp": "Doesn't change what you hear: it changes the shapes you play on guitar.",
+    "tempoLabel": "Tempo",
+    "timeSignatureLabel": "Time signature",
+    "noTempo": "No tempo given"
   },
   "metronome": {
     "title": "Metronome",
@@ -55,7 +58,11 @@
     "beat": "Beat {beat} of {total}",
     "timeSignature": "Time signature",
     "compoundHint": "In compound meters BPM counts the dotted quarter (each beat is 3 eighth notes).",
-    "oddHint": "In odd meters BPM counts eighth notes; accents mark the groups (7/8 = 2+2+3)."
+    "oddHint": "In odd meters BPM counts eighth notes; accents mark the groups (7/8 = 2+2+3).",
+    "songTempo": "Song tempo: {bpm} BPM · {signature}",
+    "songNoTempo": "The song gives no tempo · {signature}",
+    "backToSong": "Back to song tempo",
+    "relative": "{percent}% of the original tempo"
   },
   "upload": {
     "title": "Upload song",
@@ -65,7 +72,7 @@
     "keyLabel": "Key it is written in",
     "keyHelp": "e.g. G, Am, Bb, F#m",
     "tempoLabel": "Tempo (BPM)",
-    "tempoHelp": "Optional, 30 to 300",
+    "tempoHelp": "30 to 300. Don't know it? Press Tap along with the song.",
     "timeSignatureLabel": "Time signature",
     "sourceLabel": "Chords and lyrics",
     "sourcePlaceholder": "G         D/F#\nWalking down the road\nEm7        C\nunder a silver sky",
@@ -84,10 +91,19 @@
       "unknown_chord": "Unrecognized chord: {detail}",
       "invalid_recording_url": "Invalid link: {detail}",
       "unexpected": "We couldn't publish the song. Please try again."
-    }
+    },
+    "tap": "Tap"
   },
   "notFound": {
     "title": "We couldn't find that page",
     "back": "Back to songs"
+  },
+  "tempoMarkings": {
+    "largo": "Largo · very slow",
+    "adagio": "Adagio · slow",
+    "andante": "Andante · walking pace",
+    "moderato": "Moderato · moderate",
+    "allegro": "Allegro · fast",
+    "presto": "Presto · very fast"
   }
 }

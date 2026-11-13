@@ -70,10 +70,12 @@ export class PublishSong {
     if (!artist) errors.push({ field: "artist", code: "required" });
     if (!source) errors.push({ field: "source", code: "required" });
 
-    const key = parseKey(input.key);
+    const keyText = normalizeKeyInput(input.key);
+    const key = parseKey(keyText);
     if (!key) errors.push({ field: "key", code: "invalid_key" });
 
     const tempo = parseTempo(input.tempo);
+    if (tempo === null) errors.push({ field: "tempo", code: "required" });
     if (tempo === undefined) errors.push({ field: "tempo", code: "invalid_tempo" });
 
     const timeSignature = input.timeSignature.trim() || "4/4";
@@ -88,12 +90,12 @@ export class PublishSong {
       else errors.push({ field: "recordings", code: "invalid_recording_url", detail: url });
     }
 
-    const prepared = source && key ? prepareSource(source, input.key) : null;
+    const prepared = source && key ? prepareSource(source, keyText) : null;
     for (const chordError of prepared?.errors ?? []) {
       errors.push({ field: "source", code: "unknown_chord", detail: `${chordError.symbol} (${chordError.line})` });
     }
 
-    if (errors.length > 0 || !key || !prepared || tempo === undefined) return { ok: false, errors };
+    if (errors.length > 0 || !key || !prepared || tempo == null) return { ok: false, errors };
 
     const slug = await this.uniqueSlug(slugify(title, artist) || "song");
     const keyName = formatKey(key);
@@ -117,7 +119,12 @@ export class PublishSong {
   }
 }
 
-/** Empty means "unknown" (null); anything else must be a whole number in range. */
+/** Accepts lowercase input such as "g", "am" or "bb". */
+export function normalizeKeyInput(text: string): string {
+  return text.trim().replace(/^[a-g]/, (letter) => letter.toUpperCase());
+}
+
+/** Null when empty, undefined when invalid, otherwise a whole number in range. */
 function parseTempo(text: string): number | null | undefined {
   const trimmed = text.trim();
   if (trimmed === "") return null;

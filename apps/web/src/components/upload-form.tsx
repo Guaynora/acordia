@@ -1,8 +1,8 @@
 "use client";
 
 import { parseChordProSong } from "@acordia/chord-engine";
-import { useActionState, useDeferredValue, useMemo, useState } from "react";
-import { type PublishField, prepareSource } from "@/application/publish-song";
+import { useActionState, useDeferredValue, useMemo, useRef, useState } from "react";
+import { type PublishField, normalizeKeyInput, prepareSource } from "@/application/publish-song";
 import type { PublishFormState } from "@/app/[lang]/songs/new/actions";
 import { TIME_SIGNATURES } from "@/domain/song";
 import type { Dictionary } from "@/i18n/dictionaries";
@@ -36,10 +36,21 @@ export function UploadForm({
   const set = (name: keyof typeof fields) => (event: { target: { value: string } }) =>
     setFields((f) => ({ ...f, [name]: event.target.value }));
 
+  // Tap tempo: average the last few intervals between presses.
+  const taps = useRef<number[]>([]);
+  const tap = () => {
+    const now = performance.now();
+    taps.current = [...taps.current.filter((t) => now - t < 2000), now].slice(-5);
+    const first = taps.current[0];
+    if (taps.current.length < 2 || first === undefined) return;
+    const bpm = Math.round(60000 / ((now - first) / (taps.current.length - 1)));
+    setFields((f) => ({ ...f, tempo: String(Math.min(300, Math.max(30, bpm))) }));
+  };
+
   const deferredSource = useDeferredValue(fields.source);
   const preview = useMemo(() => {
     if (!deferredSource.trim()) return null;
-    const prepared = prepareSource(deferredSource, fields.key);
+    const prepared = prepareSource(deferredSource, normalizeKeyInput(fields.key));
     return { song: parseChordProSong(prepared.chordpro), errors: prepared.errors };
   }, [deferredSource, fields.key]);
 
@@ -64,13 +75,19 @@ export function UploadForm({
             <input name="key" required value={fields.key} onChange={set("key")} className="input" autoComplete="off" />
           </Field>
           <Field label={labels.tempoLabel} help={labels.tempoHelp} errors={errorsFor("tempo")}>
-            <input
-              name="tempo"
-              inputMode="numeric"
-              value={fields.tempo}
-              onChange={set("tempo")}
-              className="input"
-            />
+            <div className="flex gap-2">
+              <input
+                name="tempo"
+                required
+                inputMode="numeric"
+                value={fields.tempo}
+                onChange={set("tempo")}
+                className="input"
+              />
+              <button type="button" className="btn-secondary px-3" onClick={tap}>
+                {labels.tap}
+              </button>
+            </div>
           </Field>
           <Field label={labels.timeSignatureLabel} errors={errorsFor("timeSignature")}>
             <select name="timeSignature" value={fields.timeSignature} onChange={set("timeSignature")} className="input">
