@@ -8,7 +8,7 @@ import {
   pitchClass,
   signedSemitones,
   spell,
-} from "./note.js";
+} from "./note";
 
 export type Mode = "major" | "minor";
 

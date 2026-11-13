@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type Key, formatKey, parseKey, transposeKey, transposeSymbol } from "../src/index.js";
+import { type Key, formatKey, parseKey, transposeKey, transposeSymbol } from "../src/index";
 
 function key(text: string): Key {
   const parsed = parseKey(text);

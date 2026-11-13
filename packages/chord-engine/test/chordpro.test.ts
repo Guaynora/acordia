@@ -7,7 +7,7 @@ import {
   suggestCapos,
   transposeChordPro,
   validateChordPro,
-} from "../src/index.js";
+} from "../src/index";
 
 const SONG = `{title: Example}
 {key: G}

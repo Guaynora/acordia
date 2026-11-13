@@ -1,4 +1,4 @@
-import { type Note, mod, pitchClass, spell } from "./note.js";
+import { type Note, mod, pitchClass, spell } from "./note";
 
 /**
  * A musical interval: how many letters to move and how many semitones.

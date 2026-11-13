@@ -1,5 +1,5 @@
-import { isNonChordMarker, parseChord } from "./chord.js";
-import type { ChordError } from "./chordpro.js";
+import { isNonChordMarker, parseChord } from "./chord";
+import type { ChordError } from "./chordpro";
 
 export interface ImportResult {
   readonly chordpro: string;

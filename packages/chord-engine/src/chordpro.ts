@@ -1,5 +1,5 @@
-import { type Key, formatKey, parseKey } from "./key.js";
-import { transposeSymbol } from "./transpose.js";
+import { type Key, formatKey, parseKey } from "./key";
+import { transposeSymbol } from "./transpose";
 
 export interface ChordError {
   readonly line: number;

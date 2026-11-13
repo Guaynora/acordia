@@ -1,4 +1,4 @@
-import { type Note, formatNote, parseNote } from "./note.js";
+import { type Note, formatNote, parseNote } from "./note";
 
 export type Quality = "major" | "minor" | "diminished" | "half-diminished" | "augmented" | "suspended" | "power";
 

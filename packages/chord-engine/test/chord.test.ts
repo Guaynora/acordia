@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatChord, formatNote, parseChord } from "../src/index.js";
+import { formatChord, formatNote, parseChord } from "../src/index";
 
 describe("parseChord", () => {
   it.each([

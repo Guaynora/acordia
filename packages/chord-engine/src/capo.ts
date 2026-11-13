@@ -1,5 +1,5 @@
-import { type Key, formatKey, transposeKey } from "./key.js";
-import type { AccidentalStyle } from "./note.js";
+import { type Key, formatKey, transposeKey } from "./key";
+import type { AccidentalStyle } from "./note";
 
 /** Keys whose chords are mostly open shapes on guitar. */
 const OPEN_SHAPE_KEYS = new Set(["C", "G", "D", "A", "E", "Am", "Em", "Dm"]);

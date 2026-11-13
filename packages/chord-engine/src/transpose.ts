@@ -1,7 +1,7 @@
-import { type Chord, parseChord, formatChord, isNonChordMarker } from "./chord.js";
-import { type Interval, applyInterval, intervalBetween } from "./interval.js";
-import { type Key, accidentalStyle, isDiatonic } from "./key.js";
-import { type Note, isAwkward, pitchClass, simplestSpelling } from "./note.js";
+import { type Chord, parseChord, formatChord, isNonChordMarker } from "./chord";
+import { type Interval, applyInterval, intervalBetween } from "./interval";
+import { type Key, accidentalStyle, isDiatonic } from "./key";
+import { type Note, isAwkward, pitchClass, simplestSpelling } from "./note";
 
 /**
  * Moves a note by an interval and cleans up spellings no chart should show
