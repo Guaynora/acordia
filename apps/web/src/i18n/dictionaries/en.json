@@ -1,0 +1,88 @@
+{
+  "site": {
+    "name": "Acordia",
+    "tagline": "Chords that transpose correctly, with a metronome and the version you're playing."
+  },
+  "nav": {
+    "home": "Songs",
+    "upload": "Upload song",
+    "switchLanguage": "Español"
+  },
+  "home": {
+    "title": "Songs",
+    "searchLabel": "Search by title or artist",
+    "searchPlaceholder": "e.g. cielito lindo",
+    "searchButton": "Search",
+    "empty": "No songs yet. Upload the first one!",
+    "noResults": "No songs found for \"{query}\".",
+    "loading": "Loading songs…",
+    "keyLabel": "Key"
+  },
+  "song": {
+    "by": "by",
+    "loading": "Loading song…",
+    "key": "Key",
+    "originalKey": "Original: {key}",
+    "transposeDown": "Down a semitone",
+    "transposeUp": "Up a semitone",
+    "reset": "Original key",
+    "capo": "Capo",
+    "noCapo": "No capo",
+    "capoOption": "Fret {fret} ({key} shapes)",
+    "capoSuggested": "suggested",
+    "playShapes": "Play {key} shapes with the capo on fret {fret}.",
+    "tempo": "{bpm} BPM",
+    "recordings": "Recordings",
+    "chordErrors": "This song has chords that could not be transposed: {chords}",
+    "sections": {
+      "verse": "Verse",
+      "chorus": "Chorus",
+      "bridge": "Bridge",
+      "tab": "Tab",
+      "grid": "Chords"
+    }
+  },
+  "metronome": {
+    "title": "Metronome",
+    "start": "Start",
+    "stop": "Stop",
+    "tap": "Tap",
+    "bpm": "BPM",
+    "slower": "Slower",
+    "faster": "Faster",
+    "beat": "Beat {beat} of {total}"
+  },
+  "upload": {
+    "title": "Upload song",
+    "intro": "Paste chords the way other sites show them (chords over lyrics) or in ChordPro. Every chord is checked before publishing.",
+    "titleLabel": "Title",
+    "artistLabel": "Artist",
+    "keyLabel": "Key it is written in",
+    "keyHelp": "e.g. G, Am, Bb, F#m",
+    "tempoLabel": "Tempo (BPM)",
+    "tempoHelp": "Optional, 30 to 300",
+    "timeSignatureLabel": "Time signature",
+    "sourceLabel": "Chords and lyrics",
+    "sourcePlaceholder": "G         D/F#\nWalking down the road\nEm7        C\nunder a silver sky",
+    "recordingsLabel": "YouTube or Spotify links",
+    "recordingsHelp": "One per line. Optional.",
+    "preview": "Preview",
+    "previewEmpty": "The preview shows up here as you type.",
+    "chordErrors": "Unrecognized chords: {chords}. Fix them to publish.",
+    "submit": "Publish",
+    "submitting": "Publishing…",
+    "errors": {
+      "required": "This field is required.",
+      "invalid_key": "Invalid key. Use, for example, G, Am or Bb.",
+      "invalid_tempo": "Tempo must be a number from 30 to 300.",
+      "invalid_time_signature": "Invalid time signature.",
+      "unknown_chord": "Unrecognized chord: {detail}",
+      "invalid_recording_url": "Invalid link: {detail}",
+      "unexpected": "We couldn't publish the song. Please try again."
+    }
+  },
+  "notFound": {
+    "title": "We couldn't find that page",
+    "back": "Back to songs"
+  }
+}

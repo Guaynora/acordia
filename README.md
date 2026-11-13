@@ -18,6 +18,16 @@ The project follows Clean Architecture: dependencies point inward, and the domai
 Requirements: Node.js 22+, pnpm, Docker.
 
 ```sh
-cp .env.example .env   # then set a password
-pnpm db:up            # starts PostgreSQL on localhost:5432
+cp .env.example .env              # then set a password
+pnpm install
+pnpm db:up                        # PostgreSQL on localhost:5432
+pnpm --filter @acordia/web db:migrate
+pnpm --filter @acordia/web db:seed   # optional sample song
+pnpm --filter @acordia/web dev       # http://localhost:3000
 ```
+
+Checks: `pnpm test` and `pnpm typecheck` run across all packages.
+
+Database changes: edit `apps/web/src/infrastructure/db/schema.ts`, then run
+`pnpm --filter @acordia/web db:generate` and commit the new migration in
+`apps/web/drizzle/`.

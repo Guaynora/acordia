@@ -1,0 +1,88 @@
+{
+  "site": {
+    "name": "Acordia",
+    "tagline": "Acordes que se transportan bien, con metrónomo y la versión que estás tocando."
+  },
+  "nav": {
+    "home": "Canciones",
+    "upload": "Subir canción",
+    "switchLanguage": "English"
+  },
+  "home": {
+    "title": "Canciones",
+    "searchLabel": "Buscar por título o artista",
+    "searchPlaceholder": "Ej.: cielito lindo",
+    "searchButton": "Buscar",
+    "empty": "Todavía no hay canciones. ¡Sube la primera!",
+    "noResults": "No encontramos canciones para \"{query}\".",
+    "loading": "Cargando canciones…",
+    "keyLabel": "Tono"
+  },
+  "song": {
+    "by": "de",
+    "loading": "Cargando canción…",
+    "key": "Tono",
+    "originalKey": "Original: {key}",
+    "transposeDown": "Bajar medio tono",
+    "transposeUp": "Subir medio tono",
+    "reset": "Tono original",
+    "capo": "Cejilla",
+    "noCapo": "Sin cejilla",
+    "capoOption": "Traste {fret} (posiciones de {key})",
+    "capoSuggested": "sugerida",
+    "playShapes": "Toca posiciones de {key} con cejilla en el traste {fret}.",
+    "tempo": "{bpm} BPM",
+    "recordings": "Grabaciones",
+    "chordErrors": "Esta canción tiene acordes que no se pudieron transportar: {chords}",
+    "sections": {
+      "verse": "Estrofa",
+      "chorus": "Coro",
+      "bridge": "Puente",
+      "tab": "Tablatura",
+      "grid": "Acordes"
+    }
+  },
+  "metronome": {
+    "title": "Metrónomo",
+    "start": "Iniciar",
+    "stop": "Detener",
+    "tap": "Tap",
+    "bpm": "BPM",
+    "slower": "Más lento",
+    "faster": "Más rápido",
+    "beat": "Pulso {beat} de {total}"
+  },
+  "upload": {
+    "title": "Subir canción",
+    "intro": "Pega los acordes como los ves en otras webs (acordes sobre la letra) o en formato ChordPro. Revisamos cada acorde antes de publicar.",
+    "titleLabel": "Título",
+    "artistLabel": "Artista",
+    "keyLabel": "Tono en que está escrita",
+    "keyHelp": "Ej.: G, Am, Bb, F#m",
+    "tempoLabel": "Tempo (BPM)",
+    "tempoHelp": "Opcional, entre 30 y 300",
+    "timeSignatureLabel": "Compás",
+    "sourceLabel": "Acordes y letra",
+    "sourcePlaceholder": "G         D/F#\nCaminando por la calle\nEm7        C\nbajo un cielo de plata",
+    "recordingsLabel": "Enlaces de YouTube o Spotify",
+    "recordingsHelp": "Uno por línea. Opcional.",
+    "preview": "Vista previa",
+    "previewEmpty": "La vista previa aparece aquí mientras escribes.",
+    "chordErrors": "Acordes no reconocidos: {chords}. Corrígelos para poder publicar.",
+    "submit": "Publicar",
+    "submitting": "Publicando…",
+    "errors": {
+      "required": "Este campo es obligatorio.",
+      "invalid_key": "Tono no válido. Usa por ejemplo G, Am o Bb.",
+      "invalid_tempo": "El tempo debe ser un número entre 30 y 300.",
+      "invalid_time_signature": "Compás no válido.",
+      "unknown_chord": "Acorde no reconocido: {detail}",
+      "invalid_recording_url": "Enlace no válido: {detail}",
+      "unexpected": "No pudimos publicar la canción. Inténtalo de nuevo."
+    }
+  },
+  "notFound": {
+    "title": "No encontramos esa página",
+    "back": "Volver a las canciones"
+  }
+}
