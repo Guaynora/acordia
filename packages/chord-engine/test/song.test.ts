@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseChordProSong, parseLyricsLine } from "../src/index";
+import { parseChordProSong, parseLyricsLine, sectionKindFromLabel } from "../src/index";
 
 describe("parseLyricsLine", () => {
   it("splits chords and lyrics into segments", () => {
@@ -37,5 +37,21 @@ describe("parseChordProSong", () => {
       { kind: "section-end", section: "chorus" },
       { kind: "comment", text: "x2" },
     ]);
+  });
+});
+
+describe("sectionKindFromLabel", () => {
+  it.each([
+    ["Coro", "chorus"],
+    ["ESTRIBILLO", "chorus"],
+    ["Chorus 2", "chorus"],
+    ["Refrán", "chorus"],
+    ["Verso 1", "verse"],
+    ["Estrofa", "verse"],
+    ["Puente", "bridge"],
+    ["Intro", "other"],
+    ["Pre-coro", "other"],
+  ] as const)("%s is %s", (label, kind) => {
+    expect(sectionKindFromLabel(label)).toBe(kind);
   });
 });

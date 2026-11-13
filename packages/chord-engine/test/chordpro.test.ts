@@ -52,7 +52,32 @@ describe("importChordsOverLyrics", () => {
     const result = importChordsOverLyrics(text);
     expect(result.errors).toEqual([]);
     expect(result.chordpro).toBe(
-      ["{comment: Intro}", "[G] [D] [Em] [C]", "", "{comment: Verso}", "[G]Walking do[D/F#]wn the road"].join("\n"),
+      [
+        "{comment: Intro}",
+        "[G] [D] [Em] [C]",
+        "",
+        "{start_of_verse: Verso}",
+        "[G]Walking do[D/F#]wn the road",
+        "{end_of_verse}",
+      ].join("\n"),
+    );
+  });
+
+  it("turns known section names into ChordPro blocks", () => {
+    const text = ["Estrofa:", "C", "Uno", "", "[Coro]", "G", "Dos", "", "Solo:", "C  G"].join("\n");
+    expect(importChordsOverLyrics(text).chordpro).toBe(
+      [
+        "{start_of_verse: Estrofa}",
+        "[C]Uno",
+        "{end_of_verse}",
+        "",
+        "{start_of_chorus: Coro}",
+        "[G]Dos",
+        "{end_of_chorus}",
+        "",
+        "{comment: Solo}",
+        "[C] [G]",
+      ].join("\n"),
     );
   });
 

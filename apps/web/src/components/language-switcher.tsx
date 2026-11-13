@@ -2,16 +2,24 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { Locale } from "@/i18n/config";
+import { LOCALES, type Locale } from "@/i18n/config";
 
-/** Links to the same page in the other language. */
+/** ES / EN toggle that keeps the current page. */
 export function LanguageSwitcher({ current, label }: { current: Locale; label: string }) {
   const pathname = usePathname();
-  const target: Locale = current === "es" ? "en" : "es";
-  const href = pathname.replace(/^\/(es|en)(?=\/|$)/, `/${target}`);
   return (
-    <Link href={href} hrefLang={target} className="text-sm text-muted hover:text-foreground">
-      {label}
-    </Link>
+    <div className="segmented" role="group" aria-label={label}>
+      {LOCALES.map((locale) => (
+        <Link
+          key={locale}
+          href={pathname.replace(/^\/(es|en)(?=\/|$)/, `/${locale}`)}
+          hrefLang={locale}
+          aria-pressed={locale === current}
+          className="segmented-item"
+        >
+          {locale.toUpperCase()}
+        </Link>
+      ))}
+    </div>
   );
 }

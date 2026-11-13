@@ -21,7 +21,22 @@ export interface ParsedSong {
   readonly lines: readonly SongLine[];
 }
 
-const DIRECTIVE = /^\s*\{\s*([a-z_]+)\s*(?::\s*(.*?))?\s*\}\s*$/i;
+export type SectionKind = "verse" | "chorus" | "bridge" | "other";
+
+/** Recognizes common section names in Spanish and English. */
+export function sectionKindFromLabel(label: string): SectionKind {
+  const name = label
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .trim()
+    .toLowerCase();
+  if (/^(coro|estribillo|refran|chorus|refrain)\b/.test(name)) return "chorus";
+  if (/^(verso|estrofa|verse|stanza)\b/.test(name)) return "verse";
+  if (/^(puente|bridge)\b/.test(name)) return "bridge";
+  return "other";
+}
+
+const DIRECTIVE =/^\s*\{\s*([a-z_]+)\s*(?::\s*(.*?))?\s*\}\s*$/i;
 
 /** Short directive names defined by the ChordPro spec. */
 const ALIASES: Record<string, string> = {

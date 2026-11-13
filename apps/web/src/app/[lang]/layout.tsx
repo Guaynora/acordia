@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Epilogue, Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -8,8 +8,9 @@ import { LOCALES, hasLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionaries";
 import "../globals.css";
 
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+const display = Epilogue({ variable: "--font-display", subsets: ["latin"], weight: ["600", "700"] });
+const body = Hanken_Grotesk({ variable: "--font-body", subsets: ["latin"] });
+const mono = JetBrains_Mono({ variable: "--font-mono", subsets: ["latin"], weight: ["500", "600", "700"] });
 
 export function generateStaticParams() {
   return LOCALES.map((lang) => ({ lang }));
@@ -29,16 +30,21 @@ export default async function RootLayout({ children, params }: LayoutProps<"/[la
   const { lang } = await params;
   if (!hasLocale(lang)) notFound();
   const dict = await getDictionary(lang);
+  const other = lang === "es" ? "en" : "es";
 
   return (
-    <html lang={lang} className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    <html lang={lang} className={`${display.variable} ${body.variable} ${mono.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
-        <header className="border-b border-border">
-          <nav className="mx-auto flex max-w-3xl items-center gap-5 px-4 py-3">
-            <Link href={`/${lang}`} className="mr-auto text-lg font-bold tracking-tight">
+        <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur">
+          <nav className="mx-auto flex max-w-7xl items-center gap-2 px-4 py-3 sm:gap-4 sm:px-6 lg:px-8">
+            <Link href={`/${lang}`} className="mr-auto flex items-center gap-2 font-display text-xl font-bold tracking-tight">
+              <span aria-hidden="true" className="inline-block size-2.5 rounded-full bg-accent" />
               {dict.site.name}
             </Link>
-            <Link href={`/${lang}`} className="text-sm text-muted hover:text-foreground">
+            <Link
+              href={`/${lang}`}
+              className="hidden rounded-lg px-3 py-2 text-sm font-semibold text-muted hover:bg-surface hover:text-foreground sm:inline-flex"
+            >
               {dict.nav.home}
             </Link>
             <Link href={`/${lang}/songs/new`} className="btn-primary text-sm">
@@ -46,8 +52,8 @@ export default async function RootLayout({ children, params }: LayoutProps<"/[la
             </Link>
             <Suspense
               fallback={
-                <Link href={`/${lang === "es" ? "en" : "es"}`} className="text-sm text-muted hover:text-foreground">
-                  {dict.nav.switchLanguage}
+                <Link href={`/${other}`} className="segmented-item">
+                  {other.toUpperCase()}
                 </Link>
               }
             >
@@ -55,7 +61,7 @@ export default async function RootLayout({ children, params }: LayoutProps<"/[la
             </Suspense>
           </nav>
         </header>
-        <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">{children}</main>
+        <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</main>
       </body>
     </html>
   );

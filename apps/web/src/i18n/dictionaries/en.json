@@ -45,7 +45,11 @@
     "capoHelp": "Doesn't change what you hear: it changes the shapes you play on guitar.",
     "tempoLabel": "Tempo",
     "timeSignatureLabel": "Time signature",
-    "noTempo": "No tempo given"
+    "noTempo": "No tempo given",
+    "fontSize": "Text size",
+    "fontSmaller": "Smaller text",
+    "fontLarger": "Larger text",
+    "metronomeShortcut": "Go to metronome"
   },
   "metronome": {
     "title": "Metronome",

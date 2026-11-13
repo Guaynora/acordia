@@ -165,78 +165,101 @@ export function Metronome({
   const hint = meter.kind === "compound" ? labels.compoundHint : meter.kind === "odd" ? labels.oddHint : null;
 
   return (
-    <section aria-label={labels.title} className="rounded-xl border border-border bg-card p-4">
-      <div className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">{labels.title}</h2>
-        <p className="text-sm">
-          {songBpm !== null
-            ? format(labels.songTempo, { bpm: songBpm, signature: songMeter.signature })
-            : format(labels.songNoTempo, { signature: songMeter.signature })}
-        </p>
+    <section id="metronome" aria-label={labels.title} className="card scroll-mt-24 p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="font-display text-lg font-semibold">{labels.title}</h2>
+          <p className="font-mono text-xs text-muted">
+            {songBpm !== null
+              ? format(labels.songTempo, { bpm: songBpm, signature: songMeter.signature })
+              : format(labels.songNoTempo, { signature: songMeter.signature })}
+          </p>
+        </div>
         {changed && (
-          <button type="button" className="text-sm text-accent underline-offset-2 hover:underline" onClick={resetToSong}>
+          <button
+            type="button"
+            className="shrink-0 text-right text-xs font-semibold text-accent underline-offset-2 hover:underline"
+            onClick={resetToSong}
+          >
             {labels.backToSong}
           </button>
         )}
       </div>
-      <div className="flex flex-wrap items-center gap-3">
-        <label className="flex items-center gap-2 text-sm">
-          <span className="text-muted">{labels.timeSignature}</span>
-          <select
-            value={meter.signature}
-            onChange={(e) => setMeter(meterFor(e.target.value))}
-            className="rounded-md border border-border bg-background px-2 py-1.5"
+
+      <div className="segmented mt-4 flex flex-wrap" role="group" aria-label={labels.timeSignature}>
+        {METERS.map((m) => (
+          <button
+            key={m.signature}
+            type="button"
+            aria-pressed={m.signature === meter.signature}
+            onClick={() => setMeter(meterFor(m.signature))}
+            className="segmented-item min-h-8 px-2.5 text-xs"
           >
-            {METERS.map((m) => (
-              <option key={m.signature}>{m.signature}</option>
-            ))}
-          </select>
-        </label>
-        <div className="flex items-center gap-1" role="group" aria-label={labels.bpm}>
-          <button type="button" className="btn-icon" onClick={() => setBpm((b) => clamp(b - 1))} aria-label={labels.slower}>
-            −
+            {m.signature}
           </button>
-          <label className="flex items-baseline gap-1">
-            <input
-              type="number"
-              inputMode="numeric"
-              min={MIN_BPM}
-              max={MAX_BPM}
-              value={bpm}
-              onChange={(e) => setBpm(clamp(Number(e.target.value) || MIN_BPM))}
-              className="w-16 rounded-md border border-border bg-background px-2 py-1 text-center text-lg font-semibold tabular-nums"
-            />
-            <span className="text-sm text-muted">{labels.bpm}</span>
-          </label>
-          <button type="button" className="btn-icon" onClick={() => setBpm((b) => clamp(b + 1))} aria-label={labels.faster}>
-            +
-          </button>
-        </div>
-        <button type="button" className="btn-secondary" onClick={tap}>
-          {labels.tap}
+        ))}
+      </div>
+
+      <div className="mt-4 flex items-center justify-between gap-2">
+        <button type="button" className="btn-icon" onClick={() => setBpm((b) => clamp(b - 1))} aria-label={labels.slower}>
+          −
         </button>
-        <button type="button" className="btn-primary min-w-24" onClick={() => (running ? stop() : void start())}>
-          {running ? labels.stop : labels.start}
+        <label className="flex flex-col items-center">
+          <span className="sr-only">{labels.bpm}</span>
+          <input
+            type="number"
+            inputMode="numeric"
+            min={MIN_BPM}
+            max={MAX_BPM}
+            value={bpm}
+            onChange={(e) => setBpm(clamp(Number(e.target.value) || MIN_BPM))}
+            className="w-24 bg-transparent text-center font-mono text-4xl font-bold tabular-nums outline-none [appearance:textfield] focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-accent/30 [&::-webkit-inner-spin-button]:appearance-none"
+          />
+          <span aria-hidden="true" className="eyebrow">
+            {labels.bpm}
+          </span>
+        </label>
+        <button type="button" className="btn-icon" onClick={() => setBpm((b) => clamp(b + 1))} aria-label={labels.faster}>
+          +
         </button>
       </div>
 
-      <div className="mt-3 flex items-end gap-1.5" aria-hidden="true">
-        {meter.accents.map((accent, i) => (
-          <span
-            key={`${meter.signature}-${i}`}
-            className={`flex-1 rounded-full transition-colors duration-75 ${
-              accent === 0 ? "h-4" : accent === 1 ? "h-3" : "h-2"
-            } ${click === i ? (accent === 0 ? "bg-accent" : "bg-foreground") : "bg-border"}`}
-          />
-        ))}
-      </div>
-      <p className="mt-2 text-xs text-muted">
-        {markings[tempoMarking(bpm)]}
+      <p className="mt-1 text-center text-xs text-muted">
+        <span className="font-semibold text-secondary">{markings[tempoMarking(bpm)]}</span>
         {songBpm !== null && bpm !== songBpm
           ? ` · ${format(labels.relative, { percent: Math.round((bpm / songBpm) * 100) })}`
           : ""}
       </p>
-      {hint && <p className="mt-1 text-xs text-muted">{hint}</p>}
+
+      <div className="mt-4 flex items-end gap-1" aria-hidden="true">
+        {meter.accents.map((accent, i) => (
+          <span
+            key={`${meter.signature}-${i}`}
+            className={`flex flex-1 items-center justify-center rounded-md font-mono text-[10px] font-bold transition-colors duration-75 ${
+              accent === 0 ? "h-8" : accent === 1 ? "h-6" : "h-5"
+            } ${
+              click === i
+                ? accent === 0
+                  ? "bg-accent text-accent-foreground"
+                  : "bg-secondary text-secondary-foreground"
+                : "bg-surface-strong text-muted"
+            }`}
+          >
+            {meter.accents.length <= 7 ? i + 1 : ""}
+          </span>
+        ))}
+      </div>
+
+      <div className="mt-4 grid grid-cols-[auto_1fr] gap-2">
+        <button type="button" className="btn-secondary" onClick={tap}>
+          {labels.tap}
+        </button>
+        <button type="button" className="btn-primary" onClick={() => (running ? stop() : void start())}>
+          {running ? labels.stop : labels.start}
+        </button>
+      </div>
+
+      {hint && <p className="mt-3 text-xs text-muted">{hint}</p>}
       <p className="sr-only" aria-live="off">
         {click !== null ? format(labels.beat, { beat: click + 1, total: meter.accents.length }) : ""}
       </p>

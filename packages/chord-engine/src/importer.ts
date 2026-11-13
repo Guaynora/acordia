@@ -1,5 +1,6 @@
 import { isNonChordMarker, parseChord } from "./chord";
 import type { ChordError } from "./chordpro";
+import { sectionKindFromLabel } from "./song";
 
 export interface ImportResult {
   readonly chordpro: string;
@@ -68,12 +69,33 @@ export function importChordsOverLyrics(text: string): ImportResult {
   const lines = text.replace(/\r\n?/g, "\n").replace(/\t/g, "    ").split("\n");
   const output: string[] = [];
   const errors: ChordError[] = [];
+  let openSection: string | null = null;
+
+  const closeSection = () => {
+    if (!openSection) return;
+    // Keep blank lines outside the section so spacing stays the same.
+    let trailingBlanks = 0;
+    while (output.length > 0 && output.at(-1) === "") {
+      output.pop();
+      trailingBlanks++;
+    }
+    output.push(`{end_of_${openSection}}`, ...Array<string>(trailingBlanks).fill(""));
+    openSection = null;
+  };
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines.at(i) ?? "";
     const section = sectionName(line);
     if (section) {
-      output.push(`{comment: ${section}}`);
+      // Known sections become real ChordPro blocks; the rest stay labels.
+      closeSection();
+      const kind = sectionKindFromLabel(section);
+      if (kind === "other") {
+        output.push(`{comment: ${section}}`);
+      } else {
+        output.push(`{start_of_${kind}: ${section}}`);
+        openSection = kind;
+      }
       continue;
     }
 
@@ -102,6 +124,7 @@ export function importChordsOverLyrics(text: string): ImportResult {
       output.push(kind.tokens.map((t) => `[${t.text}]`).join(" "));
     }
   }
+  closeSection();
 
   return { chordpro: output.join("\n"), errors };
 }

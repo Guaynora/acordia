@@ -45,7 +45,11 @@
     "capoHelp": "No cambia lo que suena: cambia las posiciones que tocas en la guitarra.",
     "tempoLabel": "Tempo",
     "timeSignatureLabel": "Compás",
-    "noTempo": "Sin tempo indicado"
+    "noTempo": "Sin tempo indicado",
+    "fontSize": "Tamaño de letra",
+    "fontSmaller": "Letra más pequeña",
+    "fontLarger": "Letra más grande",
+    "metronomeShortcut": "Ir al metrónomo"
   },
   "metronome": {
     "title": "Metrónomo",
