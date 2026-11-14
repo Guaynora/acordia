@@ -9,9 +9,12 @@ import {
   pianoVoicing,
   pitchClass,
 } from "@acordia/chord-engine";
-import { useMemo, useSyncExternalStore } from "react";
+import { type FretShape } from "@acordia/chord-engine";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { format } from "@/i18n/format";
+import { type FrettedInstrument, STRING_NAMES, findShapes, loadLibrary } from "@/lib/fingerings";
 import { BassFretboard } from "./bass-fretboard";
+import { ChordDiagram } from "./chord-diagram";
 import { PianoKeyboard } from "./piano-keyboard";
 
 export interface InstrumentLabels {
@@ -25,9 +28,20 @@ export interface InstrumentLabels {
   readonly noTones: string;
   readonly leftHand: string;
   readonly rightHand: string;
+  readonly guitar: string;
+  readonly ukulele: string;
+  readonly position: string;
+  readonly previous: string;
+  readonly next: string;
+  readonly loading: string;
+  readonly noShape: string;
+  readonly capoShape: string;
+  readonly generated: string;
 }
 
-type Instrument = "piano" | "bass";
+const INSTRUMENTS = ["guitar", "piano", "bass", "ukulele"] as const;
+type Instrument = (typeof INSTRUMENTS)[number];
+const isFretted = (i: Instrument): i is FrettedInstrument => i === "guitar" || i === "ukulele";
 const STORAGE_KEY = "acordia-instrument";
 const BASS_STRINGS = ["E", "A", "D", "G"];
 
@@ -39,11 +53,11 @@ let remembered: Instrument | null = null;
 function readInstrument(): Instrument {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved === "bass" || saved === "piano") return saved;
+    if ((INSTRUMENTS as readonly string[]).includes(saved ?? "")) return saved as Instrument;
   } catch {
     // Storage blocked: use the in-memory choice.
   }
-  return remembered ?? "piano";
+  return remembered ?? "guitar";
 }
 
 function subscribe(onChange: () => void) {
@@ -55,9 +69,9 @@ function subscribe(onChange: () => void) {
   };
 }
 
-/** The instrument the viewer picked last time; piano on the server and by default. */
+/** The instrument the viewer picked last time; guitar on the server and by default. */
 function useInstrument(): [Instrument, (value: Instrument) => void] {
-  const instrument = useSyncExternalStore(subscribe, readInstrument, () => "piano" as const);
+  const instrument = useSyncExternalStore(subscribe, readInstrument, () => "guitar" as const);
   const choose = (value: Instrument) => {
     remembered = value;
     try {
@@ -70,12 +84,30 @@ function useInstrument(): [Instrument, (value: Instrument) => void] {
   return [instrument, choose];
 }
 
+/** The fingering library for a fretted instrument, once it has downloaded. */
+function useLibrary(instrument: Instrument): readonly FretShape[] | null {
+  const [loaded, setLoaded] = useState<{ instrument: Instrument; shapes: FretShape[] } | null>(null);
+  useEffect(() => {
+    if (!isFretted(instrument)) return;
+    let active = true;
+    loadLibrary(instrument).then((shapes) => {
+      if (active) setLoaded({ instrument, shapes });
+    });
+    return () => {
+      active = false;
+    };
+  }, [instrument]);
+  return loaded?.instrument === instrument ? loaded.shapes : null;
+}
+
 /**
- * Shows how to play the song's chords on piano or bass. `chords` are the
- * sounding chords (never capo shapes: a capo only concerns the guitar).
+ * Shows how to play the song's chords. Piano and bass get `chords`, the
+ * sounding chords; guitar and ukulele get `shapeChords`, which differ only
+ * with a capo (the shapes the player's hand makes).
  */
 export function InstrumentPanel({
   chords,
+  shapeChords,
   selected,
   onSelect,
   capo,
@@ -83,6 +115,7 @@ export function InstrumentPanel({
   onClose,
 }: {
   chords: readonly string[];
+  shapeChords: readonly string[];
   selected: number | null;
   onSelect: (index: number) => void;
   capo: number;
@@ -90,7 +123,15 @@ export function InstrumentPanel({
   onClose?: (() => void) | undefined;
 }) {
   const [instrument, setInstrument] = useInstrument();
-  const symbol = selected !== null ? chords[selected] : undefined;
+  const library = useLibrary(instrument);
+  const fretted = isFretted(instrument);
+  const list = fretted ? shapeChords : chords;
+  const symbol = selected !== null ? list[selected] : undefined;
+  const sounding = selected !== null ? chords[selected] : undefined;
+  // Which position of the chord is shown; back to the first for a new chord.
+  const [position, setPosition] = useState({ key: "", index: 0 });
+  const positionKey = `${instrument}|${symbol ?? ""}`;
+  const positionIndex = position.key === positionKey ? position.index : 0;
 
   const view = useMemo(() => {
     const chord = symbol ? parseChord(symbol) : null;
@@ -103,16 +144,17 @@ export function InstrumentPanel({
     const top = Math.max(...voicing.right, voicing.left);
     const from = voicing.left - (voicing.left % 12);
     const to = top - (top % 12) + 11;
-    return { tones, names, voicing, from, to, bassName: formatNote(tones.bass) };
-  }, [symbol]);
+    const shapes = fretted && library ? findShapes(tones, library, instrument) : null;
+    return { tones, names, voicing, from, to, bassName: formatNote(tones.bass), shapes };
+  }, [symbol, fretted, library, instrument]);
 
   return (
     <section className="card flex flex-col gap-4 p-5">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="font-display text-lg font-semibold">{labels.title}</h2>
         <div className="flex items-center gap-2">
-          <div className="segmented" role="group" aria-label={labels.title}>
-            {(["piano", "bass"] as const).map((value) => (
+          <div className="segmented flex-wrap" role="group" aria-label={labels.title}>
+            {INSTRUMENTS.map((value) => (
               <button
                 key={value}
                 type="button"
@@ -132,9 +174,9 @@ export function InstrumentPanel({
         </div>
       </div>
 
-      {chords.length > 0 && (
+      {list.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
-          {chords.map((chord, index) => (
+          {list.map((chord, index) => (
             <button
               key={chord}
               type="button"
@@ -166,7 +208,16 @@ export function InstrumentPanel({
             </dl>
           </div>
 
-          {instrument === "piano" ? (
+          {fretted ? (
+            <FrettedView
+              instrument={instrument}
+              shapes={view.shapes}
+              index={positionIndex}
+              onIndex={(index) => setPosition({ key: positionKey, index })}
+              symbol={symbol}
+              labels={labels}
+            />
+          ) : instrument === "piano" ? (
             <>
               <PianoKeyboard
                 from={view.from}
@@ -201,7 +252,56 @@ export function InstrumentPanel({
         </div>
       )}
 
-      {capo > 0 && <p className="text-xs text-muted">{labels.soundingHint}</p>}
+      {capo > 0 &&
+        (fretted ? (
+          symbol &&
+          sounding && <p className="text-xs text-muted">{format(labels.capoShape, { shape: symbol, sounding, capo })}</p>
+        ) : (
+          <p className="text-xs text-muted">{labels.soundingHint}</p>
+        ))}
     </section>
+  );
+}
+
+function FrettedView({
+  instrument,
+  shapes,
+  index,
+  onIndex,
+  symbol,
+  labels,
+}: {
+  instrument: FrettedInstrument;
+  shapes: readonly FretShape[] | null;
+  index: number;
+  onIndex: (index: number) => void;
+  symbol: string;
+  labels: InstrumentLabels;
+}) {
+  if (!shapes) return <p className="text-sm text-muted">{labels.loading}</p>;
+  if (shapes.length === 0) return <p className="text-sm text-muted">{format(labels.noShape, { chord: symbol })}</p>;
+  const current = Math.min(index, shapes.length - 1);
+  const shape = shapes[current];
+  if (!shape) return null;
+  const step = (delta: number) => onIndex((current + delta + shapes.length) % shapes.length);
+
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <ChordDiagram shape={shape} stringNames={STRING_NAMES[instrument]} label={`${labels[instrument]}: ${symbol}`} />
+      {shapes.length > 1 && (
+        <div className="flex items-center gap-3">
+          <button type="button" className="btn-icon size-9" onClick={() => step(-1)} aria-label={labels.previous}>
+            ‹
+          </button>
+          <span className="font-mono text-xs text-muted tabular-nums" aria-live="polite">
+            {format(labels.position, { current: current + 1, total: shapes.length })}
+          </span>
+          <button type="button" className="btn-icon size-9" onClick={() => step(1)} aria-label={labels.next}>
+            ›
+          </button>
+        </div>
+      )}
+      {!shape.fingers && <p className="text-center text-xs text-muted">{labels.generated}</p>}
+    </div>
   );
 }

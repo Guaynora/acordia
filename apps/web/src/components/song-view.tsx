@@ -123,6 +123,7 @@ export function SongView({
   const panel = (onClose?: () => void) => (
     <InstrumentPanel
       chords={view.soundingChords}
+      shapeChords={view.shown}
       selected={selected}
       onSelect={setSelected}
       capo={capo}
