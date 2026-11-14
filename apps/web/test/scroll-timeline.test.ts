@@ -63,3 +63,54 @@ describe("stepIndexAt", () => {
     expect(stepIndexAt(buildScrollTimeline([]), 0)).toBeNull();
   });
 });
+
+describe("bar lines", () => {
+  const steps = (source: string) => timelineOf(source).steps.map((s) => [s.segment, s.startBar, s.bars]);
+
+  it("shares a bar between the chords inside it", () => {
+    // | G | C D | -> G one bar, C and D half a bar each.
+    expect(steps("| [G]Walking | [C]down the [D]road |")).toEqual([
+      [1, 0, 1],
+      [2, 1, 0.5],
+      [3, 1.5, 0.5],
+    ]);
+  });
+
+  it("holds the previous chord through a bar without chords", () => {
+    expect(steps("| [G]Long note | | [C]then |")).toEqual([
+      [1, 0, 2],
+      [2, 2, 1],
+    ]);
+    expect(timelineOf("| [G]Long note | | [C]then |").totalBars).toBe(3);
+  });
+
+  it("times a bar without chords at the start of a line as the line itself", () => {
+    // The words before C are one segment, so C is segment 1.
+    expect(steps("| sung on | [C]then |")).toEqual([
+      [null, 0, 1],
+      [1, 1, 1],
+    ]);
+  });
+
+  it("treats words before the first bar line as a pickup, but chords there as a bar", () => {
+    expect(steps("And | [G]then |")).toEqual([[1, 0, 1]]);
+    expect(steps("[Em]Intro | [G]then")).toEqual([
+      [0, 0, 1],
+      [1, 1, 1],
+    ]);
+  });
+
+  it("counts chord-only bars, including three chords in one bar", () => {
+    const timeline = timelineOf("| [G] [C] [D] | [G] |");
+    expect(timeline.steps.map((s) => s.bars)).toEqual([1 / 3, 1 / 3, 1 / 3, 1]);
+    expect(timeline.totalBars).toBe(2);
+    // Two thirds into the first bar, D sounds.
+    expect(stepIndexAt(timeline, 2 / 3)).toBe(2);
+  });
+
+  it("mixes measured and unmeasured lines", () => {
+    const timeline = timelineOf("[G]one [C]two\n| [D]half [G]half |\nplain line");
+    expect(timeline.steps.map((s) => s.startBar)).toEqual([0, 1, 2, 2.5, 3]);
+    expect(timeline.totalBars).toBe(5);
+  });
+});

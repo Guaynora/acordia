@@ -32,7 +32,7 @@ function scrollBehavior(): ScrollBehavior {
 
 /**
  * Moves the page while the user plays. In tempo mode it follows the
- * metronome: every downbeat it hears moves the sheet one bar, so tempo,
+ * metronome: every beat it hears says where the song is, so tempo,
  * meter and count-in all come from the metronome and the two never drift.
  * In manual mode it scrolls at a constant speed on its own.
  */
@@ -105,12 +105,17 @@ export function useAutoScroll({
     [clock],
   );
 
-  // Tempo mode: the metronome counts the song's bars and each downbeat says
-  // which one sounds; the sheet shows it. The sheet only says where to start.
+  // Tempo mode: the metronome counts the song's bars and each beat says
+  // where the music is; the sheet shows it. The sheet only says where to start.
   useEffect(() => {
     if (activeMode !== "tempo") return;
     let shownLine = -1;
     let following = false;
+    // After a jump, the rest of the current bar still plays: wait for the
+    // bar jumped to, so the highlight does not flick back.
+    let awaitedBar: number | null = null;
+    // A fresh start shows the starting chord even if the step index is unchanged.
+    let restoring = true;
 
     const place = (index: number) => {
       const step = live.current.timeline.steps[index];
@@ -124,9 +129,13 @@ export function useAutoScroll({
       return step;
     };
 
-    const onDownbeat = (bar: number) => {
+    const onBeat = (bar: number, position: number) => {
       if (!following) return;
-      const index = stepIndexAt(live.current.timeline, bar);
+      if (awaitedBar !== null) {
+        if (bar !== awaitedBar) return;
+        awaitedBar = null;
+      }
+      const index = stepIndexAt(live.current.timeline, position);
       if (index === null) {
         // The song is over; the metronome may keep going.
         following = false;
@@ -134,13 +143,21 @@ export function useAutoScroll({
         setPosition(null);
         return;
       }
+      // Most beats keep the same chord; only a new one re-renders.
+      if (index === live.current.stepIndex && !restoring) return;
+      restoring = false;
       const step = place(index);
       if (step) setPosition({ line: step.line, segment: step.segment });
     };
 
     // Asked by the metronome as it starts: bring the first line into place
     // during the count-in and tell it which bar that is.
-    const releaseStart = clock.provideStart(() => place(startIndex())?.startBar ?? 0);
+    // Bars only start whole, so a chord in the middle of one starts its bar.
+    const releaseStart = clock.provideStart(() => {
+      restoring = true;
+      awaitedBar = null;
+      return Math.floor(place(startIndex())?.startBar ?? 0);
+    });
 
     // Move to a step. Playing, the next downbeat plays it; stopped, the
     // next start begins there (it is in view after this scroll).
@@ -148,14 +165,18 @@ export function useAutoScroll({
       const step = place(index);
       if (!step) return;
       setPosition({ line: step.line, segment: step.segment });
-      if (clock.isMetronomeRunning()) clock.jumpTo(step.startBar);
+      if (clock.isMetronomeRunning()) {
+        awaitedBar = Math.floor(step.startBar);
+        restoring = true;
+        clock.jumpTo(awaitedBar);
+      }
     };
 
     // Switching to tempo mode while the metronome plays: join from the first visible line.
     if (clock.isMetronomeRunning()) jumpRef.current(startIndex());
 
     const unsubscribe = clock.subscribe((event) => {
-      if (event.type === "downbeat") onDownbeat(event.bar);
+      if (event.type === "beat") onBeat(event.bar, event.bar + event.click / event.clicks);
       // On stop, keep the highlight and step so play resumes from there.
       else if (event.type === "stop") following = false;
     });

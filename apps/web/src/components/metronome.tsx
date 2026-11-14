@@ -250,8 +250,10 @@ export function Metronome({
       let latest: Shown | null = null;
       while (queue.current.length > 0 && (queue.current[0]?.time ?? Infinity) <= context.currentTime) {
         latest = queue.current.shift() ?? null;
-        // A bar of the music (not the count-in) starts as this click sounds.
-        if (latest?.bar != null && latest.click === 0) clock?.emit({ type: "downbeat", bar: latest.bar });
+        // Tell the sheet where the music is (count-in clicks have no bar).
+        if (latest?.bar != null) {
+          clock?.emit({ type: "beat", bar: latest.bar, click: latest.click, clicks: latest.meter.accents.length });
+        }
       }
       if (latest) setShown(latest);
       frameRef.current = requestAnimationFrame(draw);

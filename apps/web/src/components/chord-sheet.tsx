@@ -1,4 +1,4 @@
-import type { MouseEvent } from "react";
+import type { MouseEvent, ReactNode } from "react";
 import {
   type ParsedSong,
   type SectionKind,
@@ -222,6 +222,21 @@ function SectionLabel({
   );
 }
 
+/** A bar line: present but quiet, so the lyrics stay easy to read. */
+function BarLine() {
+  return (
+    <span aria-hidden="true" className="font-mono font-normal text-muted/60">
+      |
+    </span>
+  );
+}
+
+/** Lyrics with their "|" drawn as bar lines. */
+function withBarLines(text: string): ReactNode {
+  if (!text.includes("|")) return text;
+  return text.split("|").flatMap((part, i) => (i === 0 ? [part] : [<BarLine key={i} />, part]));
+}
+
 /** One change as the sheet shows it: "♩ = 140", "7/8", "(2+2+3)", "Key: Ab", a ramp. */
 function changeText(change: ChangeLine, labels: ChangeLabels | undefined): string {
   const value = change.value.trim();
@@ -311,14 +326,15 @@ function Line({
       }
     : undefined;
 
-  const chordOnly = line.segments.every((s) => s.text.trim() === "");
+  // Bar lines alone do not make a line lyrics: "| G | C D |" is chords.
+  const chordOnly = line.segments.every((s) => s.text.replace(/\|/g, "").trim() === "");
   if (chordOnly) {
     return (
-      <div data-line={index} onClick={start} className={`flex flex-wrap gap-x-5 gap-y-1 py-0.5${marker}`}>
-        {line.segments.map((segment, i) =>
+      <div data-line={index} onClick={start} className={`flex flex-wrap items-baseline gap-x-5 gap-y-1 py-0.5${marker}`}>
+        {line.segments.flatMap((segment, i) => [
           segment.chord ? (
             <ChordLabel
-              key={i}
+              key={`c${i}`}
               symbol={segment.chord}
               className="font-mono text-[0.95em] font-bold text-accent"
               onChord={onChord}
@@ -326,7 +342,8 @@ function Line({
               playing={playing === i}
             />
           ) : null,
-        )}
+          ...Array.from(segment.text.matchAll(/\|/g), (_, b) => <BarLine key={`b${i}-${b}`} />),
+        ])}
       </div>
     );
   }
@@ -348,7 +365,7 @@ function Line({
               ""
             )}
           </span>
-          <span className="whitespace-pre">{segment.text || (segment.chord ? " " : "")}</span>
+          <span className="whitespace-pre">{withBarLines(segment.text || (segment.chord ? " " : ""))}</span>
         </span>
       ))}
     </div>

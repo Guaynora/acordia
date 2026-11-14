@@ -4,14 +4,20 @@ import { createContext, useContext } from "react";
 import type { TempoMap } from "@/domain/tempo-map";
 
 /**
- * What the song page's parts tell each other. `downbeat` fires when the
- * first click of a song bar sounds (count-in excluded) and carries that
- * bar, so whatever follows it moves with what the player hears. `map`
- * fires when the sheet's tempo map changes.
+ * What the song page's parts tell each other. `beat` fires as each main
+ * click of the song sounds (count-in excluded) and says where it falls,
+ * so whatever follows it moves with what the player hears, down to chords
+ * that change mid-bar. `map` fires when the sheet's tempo map changes.
  */
 export type ClockEvent =
   | { readonly type: "start" }
-  | { readonly type: "downbeat"; readonly bar: number }
+  | {
+      readonly type: "beat";
+      readonly bar: number;
+      /** Main click within the bar (0 on the downbeat) and clicks per bar. */
+      readonly click: number;
+      readonly clicks: number;
+    }
   | { readonly type: "stop" }
   | { readonly type: "map" };
 
