@@ -4,6 +4,8 @@
  */
 export interface User {
   readonly id: string;
+  /** Public alias for the profile URL, unique. Empty only in a stale session. */
+  readonly handle: string;
   readonly name: string;
   readonly image: string | null;
 }

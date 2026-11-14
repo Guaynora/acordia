@@ -31,6 +31,8 @@ export interface Arrangement {
   readonly authorId: string | null;
   /** The author's current display name, or the free-text name older versions carried. */
   readonly authorName: string | null;
+  /** The author's profile alias; null for versions from before accounts. */
+  readonly authorHandle: string | null;
   /** Key the ChordPro source is written in. */
   readonly key: string;
   /** Overrides the song's tempo and meter when the arrangement changes the feel. */

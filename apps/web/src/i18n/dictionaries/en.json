@@ -12,7 +12,8 @@
     "uploadShort": "Upload",
     "signIn": "Sign in",
     "signOut": "Sign out",
-    "account": "Your account"
+    "account": "Your account",
+    "profile": "Your profile"
   },
   "home": {
     "title": "Songs",
@@ -174,5 +175,13 @@
     "privacy": "We only use your Google name, photo and email. We never post anything on your behalf.",
     "signedInAs": "You are signed in as {name}.",
     "continue": "Continue"
+  },
+  "profile": {
+    "joined": "On Acordia since {date}",
+    "versionsOne": "1 published version",
+    "versions": "{count} published versions",
+    "empty": "No published versions yet.",
+    "versionsTitle": "Versions",
+    "notFound": "That profile does not exist."
   }
 }

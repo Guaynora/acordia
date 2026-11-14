@@ -2,8 +2,10 @@ import "server-only";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
+import { availableHandle } from "@/domain/handle";
 import { getDb } from "../db/client";
 import { accounts, sessions, users, verifications } from "../db/schema";
+import { DrizzleUserRepository } from "../repositories/drizzle-user-repository";
 
 /**
  * Google is optional so the site still runs (read-only for everyone) when the
@@ -33,6 +35,19 @@ function createAuth() {
       additionalFields: {
         // Set by an admin in the database, never by the person signing up.
         role: { type: "string", required: false, defaultValue: "user", input: false },
+        // Assigned by the hook below from the person's name.
+        handle: { type: "string", required: false, input: false },
+      },
+    },
+    databaseHooks: {
+      user: {
+        create: {
+          before: async (user) => {
+            const repository = new DrizzleUserRepository(getDb());
+            const handle = await availableHandle(user.name, (h) => repository.handleExists(h));
+            return { data: { ...user, handle } };
+          },
+        },
       },
     },
     session: {
