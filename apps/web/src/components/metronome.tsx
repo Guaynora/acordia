@@ -84,6 +84,9 @@ export function Metronome({
 }) {
   const songMeter = meterFor(songTimeSignature);
   const [bpm, setBpm] = useState(clamp(songBpm ?? DEFAULT_BPM));
+  // What the user is typing; clamped only when they leave the field, so
+  // typing "120" does not jump to 30 at the "1" and then to 300.
+  const [bpmDraft, setBpmDraft] = useState<string | null>(null);
   const [meter, setMeter] = useState<Meter>(songMeter);
   const [subdivision, setSubdivision] = useState<Subdivision>(1);
   const [countInBars, setCountInBars] = useState(0);
@@ -281,8 +284,22 @@ export function Metronome({
             inputMode="numeric"
             min={MIN_BPM}
             max={MAX_BPM}
-            value={bpm}
-            onChange={(e) => setBpm(clamp(Number(e.target.value) || MIN_BPM))}
+            value={bpmDraft ?? bpm}
+            onChange={(e) => {
+              const text = e.target.value;
+              setBpmDraft(text);
+              // Follow along live while the number typed is already in range.
+              const typed = Number(text);
+              if (text !== "" && typed >= MIN_BPM && typed <= MAX_BPM) setBpm(Math.round(typed));
+            }}
+            onBlur={() => {
+              const typed = Number(bpmDraft);
+              if (bpmDraft !== null && bpmDraft.trim() !== "" && Number.isFinite(typed)) setBpm(clamp(typed));
+              setBpmDraft(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") e.currentTarget.blur();
+            }}
             className="w-24 bg-transparent text-center font-mono text-4xl font-bold tabular-nums outline-none [appearance:textfield] focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-accent/30 [&::-webkit-inner-spin-button]:appearance-none"
           />
           <span aria-hidden="true" className="eyebrow">
