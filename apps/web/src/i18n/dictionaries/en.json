@@ -129,7 +129,26 @@
     "songTempo": "Song tempo: {bpm} BPM · {signature}",
     "songNoTempo": "The song gives no tempo · {signature}",
     "backToSong": "Back to song tempo",
-    "relative": "{percent}% of the original tempo"
+    "relative": "{percent}% of the original tempo",
+    "subdivision": "Subdivision",
+    "subdivisions": {
+      "1": "Quarters",
+      "2": "Eighths",
+      "3": "Triplets",
+      "4": "16ths"
+    },
+    "compoundSubdivisions": {
+      "1": "Eighths",
+      "2": "16ths"
+    },
+    "countIn": "Count-in",
+    "countInNone": "Off",
+    "countInBars": "{bars} bars",
+    "counting": "Count… {count}",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "silentHint": "Sound off: follow the pulse on screen.",
+    "countInOne": "1 bar"
   },
   "upload": {
     "title": "Upload song",

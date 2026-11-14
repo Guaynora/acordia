@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { METERS, meterFor, secondsPerClick } from "@/domain/meter";
+import { METERS, barSteps, countInClicks, meterFor, secondsPerClick, secondsPerStep, subdivisionsFor } from "@/domain/meter";
 
 describe("meters", () => {
   it("has one click per eighth in 6/8 and counts BPM in dotted quarters", () => {
@@ -23,5 +23,41 @@ describe("meters", () => {
 
   it("starts every bar on a downbeat", () => {
     for (const meter of METERS) expect(meter.accents[0]).toBe(0);
+  });
+});
+
+describe("subdivisions", () => {
+  it("offers triplets and sixteenths only where they make sense", () => {
+    expect(subdivisionsFor(meterFor("4/4"))).toEqual([1, 2, 3, 4]);
+    expect(subdivisionsFor(meterFor("7/8"))).toEqual([1, 2, 3, 4]);
+    expect(subdivisionsFor(meterFor("6/8"))).toEqual([1, 2]);
+  });
+
+  it("splits each click into softer ticks that keep the bar position", () => {
+    const steps = barSteps(meterFor("3/4"), 2);
+    expect(steps).toEqual([
+      { click: 0, sub: 0, accent: 0 },
+      { click: 0, sub: 1, accent: "sub" },
+      { click: 1, sub: 0, accent: 2 },
+      { click: 1, sub: 1, accent: "sub" },
+      { click: 2, sub: 0, accent: 2 },
+      { click: 2, sub: 1, accent: "sub" },
+    ]);
+    expect(barSteps(meterFor("4/4"), 1)).toHaveLength(4);
+    expect(barSteps(meterFor("4/4"), 3)).toHaveLength(12);
+  });
+
+  it("keeps the beat at the same speed whatever the subdivision", () => {
+    const meter = meterFor("4/4");
+    expect(secondsPerStep(meter, 120, 1)).toBeCloseTo(0.5);
+    expect(secondsPerStep(meter, 120, 2)).toBeCloseTo(0.25);
+    expect(secondsPerStep(meter, 120, 3)).toBeCloseTo(1 / 6);
+    expect(secondsPerStep(meterFor("6/8"), 60, 2) * 2 * 3).toBeCloseTo(1);
+  });
+
+  it("counts in whole bars", () => {
+    expect(countInClicks(meterFor("4/4"), 1)).toBe(4);
+    expect(countInClicks(meterFor("6/8"), 2)).toBe(12);
+    expect(countInClicks(meterFor("3/4"), 0)).toBe(0);
   });
 });
