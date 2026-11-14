@@ -4,6 +4,7 @@ import { DeleteArrangement } from "@/application/delete-arrangement";
 import { EditArrangement } from "@/application/edit-arrangement";
 import { PublishSong } from "@/application/publish-song";
 import { canManageArrangement } from "@/domain/permissions";
+import { FakeRecordingInfo } from "./support/fake-recording-info";
 import { InMemorySongRepository } from "./support/in-memory-song-repository";
 
 const ANA = { id: "ana", name: "Ana", role: "user" } as const;
@@ -41,7 +42,7 @@ describe("EditArrangement and DeleteArrangement", () => {
 
   beforeEach(async () => {
     repository = new InMemorySongRepository();
-    await new PublishSong(repository).execute(
+    await new PublishSong(repository, new FakeRecordingInfo()).execute(
       { title: "Cielito lindo", artist: "Tradicional", key: "C", tempo: "120", timeSignature: "3/4", source: "C\nDe la Sierra", recordingUrls: [] },
       ANA,
     );

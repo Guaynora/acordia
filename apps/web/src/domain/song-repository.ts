@@ -1,4 +1,4 @@
-import type { RecordingReference } from "./recording-url";
+import type { RecordingInfo, RecordingReference } from "./recording-url";
 import type { ArrangementKind, Song, SongSummary } from "./song";
 
 export interface NewArrangement {
@@ -13,6 +13,8 @@ export interface NewArrangement {
   readonly chordpro: string;
 }
 
+export type NewRecording = RecordingReference & { readonly info: RecordingInfo | null };
+
 export interface NewSong {
   readonly slug: string;
   readonly title: string;
@@ -23,7 +25,7 @@ export interface NewSong {
   /** Account that publishes the song; also credited for its recordings. */
   readonly createdBy: string;
   readonly arrangement: NewArrangement;
-  readonly recordings: readonly RecordingReference[];
+  readonly recordings: readonly NewRecording[];
 }
 
 /** Fields of a version that an edit can change; its slug and author never change. */

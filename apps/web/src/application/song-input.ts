@@ -28,7 +28,8 @@ export type InputErrorCode =
   | "invalid_tempo"
   | "invalid_time_signature"
   | "unknown_chord"
-  | "invalid_recording_url";
+  | "invalid_recording_url"
+  | "recording_not_found";
 
 export interface InputError {
   readonly field: InputField;

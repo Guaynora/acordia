@@ -5,6 +5,7 @@
 import { eq } from "drizzle-orm";
 import { PublishSong } from "../../application/publish-song";
 import type { Actor } from "../../domain/user";
+import { OEmbedRecordingInfo } from "../oembed/oembed-recording-info";
 import { DrizzleSongRepository } from "../repositories/drizzle-song-repository";
 import { type Database, getDb } from "./client";
 import { users } from "./schema";
@@ -54,7 +55,7 @@ async function main() {
     console.log("Seed already applied.");
     return;
   }
-  const result = await new PublishSong(repository).execute({
+  const result = await new PublishSong(repository, new OEmbedRecordingInfo()).execute({
     title: "Cielito lindo",
     artist: "Tradicional",
     key: "C",

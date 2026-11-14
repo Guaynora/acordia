@@ -1,34 +1,50 @@
 import { embedUrl } from "@/domain/recording-url";
 import type { Recording } from "@/domain/song";
+import { format } from "@/i18n/format";
+import { YouTubePlayer } from "./youtube-player";
+
+export interface RecordingLabels {
+  readonly title: string;
+  readonly play: string;
+  readonly untitled: string;
+}
 
 /** Official provider players; we embed and never host audio. */
-export function Recordings({ recordings, title }: { recordings: readonly Recording[]; title: string }) {
+export function Recordings({ recordings, labels }: { recordings: readonly Recording[]; labels: RecordingLabels }) {
   if (recordings.length === 0) return null;
   return (
-    <section className="card space-y-3 p-5">
-      <h2 className="font-display text-lg font-semibold">{title}</h2>
-      {recordings.map((recording) =>
-        recording.provider === "youtube" ? (
-          <iframe
-            key={recording.id}
-            src={embedUrl(recording)}
-            title={`YouTube ${recording.externalId}`}
-            className="aspect-video w-full rounded-xl border border-border"
-            allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            loading="lazy"
-          />
-        ) : (
-          <iframe
-            key={recording.id}
-            src={embedUrl(recording)}
-            title={`Spotify ${recording.externalId}`}
-            className="h-[152px] w-full rounded-xl"
-            allow="encrypted-media"
-            loading="lazy"
-          />
-        ),
-      )}
+    <section className="card space-y-4 p-5">
+      <h2 className="font-display text-lg font-semibold">{labels.title}</h2>
+      {recordings.map((recording) => {
+        const title = recording.title ?? labels.untitled;
+        return (
+          <figure key={recording.id} className="space-y-2">
+            {recording.provider === "youtube" ? (
+              <YouTubePlayer
+                embedUrl={embedUrl(recording)}
+                // Older links have no stored thumbnail; YouTube's default one works for any video.
+                thumbnailUrl={recording.thumbnailUrl ?? `https://i.ytimg.com/vi/${recording.externalId}/hqdefault.jpg`}
+                title={title}
+                playLabel={format(labels.play, { title })}
+              />
+            ) : (
+              <iframe
+                src={embedUrl(recording)}
+                title={title}
+                className="h-[152px] w-full rounded-xl"
+                allow="encrypted-media"
+                loading="lazy"
+              />
+            )}
+            {recording.title && (
+              <figcaption className="text-sm">
+                <span className="line-clamp-2 font-semibold">{recording.title}</span>
+                {recording.authorName && <span className="block text-muted">{recording.authorName}</span>}
+              </figcaption>
+            )}
+          </figure>
+        );
+      })}
     </section>
   );
 }

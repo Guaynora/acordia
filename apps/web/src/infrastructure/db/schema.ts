@@ -169,6 +169,10 @@ export const recordings = pgTable(
     provider: recordingProvider("provider").notNull(),
     externalId: text("external_id").notNull(),
     key: text("key"),
+    // From the provider's oEmbed when the link was added.
+    title: text("title"),
+    authorName: text("author_name"),
+    thumbnailUrl: text("thumbnail_url"),
     addedBy: uuid("added_by").references(() => users.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },

@@ -50,7 +50,14 @@ export class InMemorySongRepository implements SongRepository {
       arrangements: found.arrangements.map(
         (a, i): Arrangement => ({ ...a, authorName: null, authorHandle: null, createdAt: new Date(i) }),
       ),
-      recordings: s.recordings.map((r, i) => ({ id: String(i), ...r, key: null })),
+      recordings: s.recordings.map(({ info, ...r }, i) => ({
+        id: String(i),
+        ...r,
+        key: null,
+        title: info?.title ?? null,
+        authorName: info?.authorName ?? null,
+        thumbnailUrl: info?.thumbnailUrl ?? null,
+      })),
     };
   }
 

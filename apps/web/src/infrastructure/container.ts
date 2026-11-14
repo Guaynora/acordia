@@ -7,6 +7,7 @@ import { GetProfile } from "@/application/get-profile";
 import { PublishSong } from "@/application/publish-song";
 import { GetSong, SearchSongs } from "@/application/queries";
 import { getDb } from "./db/client";
+import { OEmbedRecordingInfo } from "./oembed/oembed-recording-info";
 import { DrizzleFavoriteRepository } from "./repositories/drizzle-favorite-repository";
 import { DrizzleSongRepository } from "./repositories/drizzle-song-repository";
 import { DrizzleUserRepository } from "./repositories/drizzle-user-repository";
@@ -28,7 +29,7 @@ function favoriteRepository() {
 }
 
 export const useCases = {
-  publishSong: () => new PublishSong(songRepository()),
+  publishSong: () => new PublishSong(songRepository(), new OEmbedRecordingInfo()),
   addArrangement: () => new AddArrangement(songRepository()),
   editArrangement: () => new EditArrangement(songRepository()),
   deleteArrangement: () => new DeleteArrangement(songRepository()),

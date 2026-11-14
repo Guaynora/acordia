@@ -94,6 +94,9 @@ export class DrizzleSongRepository implements SongRepository {
         provider: r.provider,
         externalId: r.externalId,
         key: r.key,
+        title: r.title,
+        authorName: r.authorName,
+        thumbnailUrl: r.thumbnailUrl,
       })),
     };
   }
@@ -120,7 +123,15 @@ export class DrizzleSongRepository implements SongRepository {
       if (!song) throw new Error("Song insert returned no row");
       await tx.insert(arrangements).values({ songId: song.id, ...input.arrangement });
       if (input.recordings.length > 0) {
-        await tx.insert(recordings).values(input.recordings.map((r) => ({ songId: song.id, addedBy: input.createdBy, ...r })));
+        await tx.insert(recordings).values(input.recordings.map(({ provider, externalId, info }) => ({
+              songId: song.id,
+              addedBy: input.createdBy,
+              provider,
+              externalId,
+              title: info?.title ?? null,
+              authorName: info?.authorName ?? null,
+              thumbnailUrl: info?.thumbnailUrl ?? null,
+            })));
       }
       return song.id;
     });
