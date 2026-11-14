@@ -137,6 +137,24 @@ const SONGS: readonly SeedSong[] = [
   },
 ];
 
+// A version written with bar lines: two chords sharing a bar in the intro
+// and outro, bars that hold a chord ("| |"), a first verse measured bar by
+// bar, and the remaining verses without bar lines to show they mix.
+const AMAZING_GRACE_BARS = [
+  "{c: Intro}",
+  "| [G] [C] | [G] [D7] |",
+  "",
+  ...verse(1, [
+    "A | [G]mazing | [G7]grace, how | [C]sweet the | [G]sound",
+    "That | [G]saved a | [Em]wretch like | [D]me | [D7] |",
+    "I | [G]once was | [G7]lost, but | [C]now am | [G]found,",
+    "Was | [Em]blind, but | [D]now I | [G]see | |",
+  ]),
+  ...AMAZING_GRACE_VERSES.slice(1).flatMap((lines, i) => verse(i + 2, lines)),
+  "{c: Outro}",
+  "| [C] [D7] | [G] | |",
+].join("\n");
+
 interface SeedVersion {
   readonly songSlug: string;
   readonly slug: string;
@@ -156,6 +174,15 @@ const VERSIONS: readonly SeedVersion[] = [
     description: "Interludio en 4/4, quinta estrofa más rápida, la última medio tono arriba y un final ritardando.",
     key: "G",
     source: AMAZING_GRACE_BUILD,
+  },
+  {
+    songSlug: "amazing-grace-john-newton",
+    slug: "con-compases",
+    name: "Con compases",
+    kind: "other",
+    description: "Escrita con barras de compás: dos acordes por compás en la intro y el final, y compases que sostienen el acorde.",
+    key: "G",
+    source: AMAZING_GRACE_BARS,
   },
 ];
 
