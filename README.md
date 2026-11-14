@@ -4,14 +4,10 @@ A chord sheet platform with musically correct transposition, YouTube/Spotify lin
 
 ## Structure
 
-The project follows Clean Architecture: dependencies point inward, and the domain knows nothing about frameworks, databases or external services.
-
-| Layer | Location | Contents |
-| --- | --- | --- |
-| Domain | `packages/chord-engine`, `apps/web/src/domain` | Chord, Key, Interval, Song, Arrangement, Recording; repository interfaces |
-| Application | `apps/web/src/application` | Use cases: upload arrangement, transpose, add recording, search |
-| Infrastructure | `apps/web/src/infrastructure` | Postgres repositories, oEmbed client, auth |
-| Presentation | `apps/web/src/app` | Next.js routes and components, metronome, i18n (es/en) |
+Clean Architecture in a pnpm monorepo: the chord engine lives in
+`packages/chord-engine` and the web app in `apps/web`. Layers, data model,
+sign-in and permission flows are drawn in
+[docs/architecture.md](docs/architecture.md).
 
 ## Local development
 
