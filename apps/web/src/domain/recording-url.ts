@@ -55,3 +55,23 @@ export function embedUrl(reference: RecordingReference): string {
     ? `https://www.youtube-nocookie.com/embed/${reference.externalId}`
     : `https://open.spotify.com/embed/track/${reference.externalId}`;
 }
+
+/** What the provider says about a recording, shown next to its player. */
+export interface RecordingInfo {
+  readonly title: string;
+  /** Channel or artist; Spotify does not say. */
+  readonly authorName: string | null;
+  readonly thumbnailUrl: string | null;
+}
+
+export type RecordingLookup =
+  | { readonly status: "found"; readonly info: RecordingInfo }
+  /** The provider says it does not exist, or it is private. */
+  | { readonly status: "missing" }
+  /** The provider could not be reached; the link may still be fine. */
+  | { readonly status: "unavailable" };
+
+/** Port implemented by the infrastructure layer (oEmbed). */
+export interface RecordingInfoProvider {
+  lookup(reference: RecordingReference): Promise<RecordingLookup>;
+}

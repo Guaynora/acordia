@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { AddArrangement } from "@/application/add-arrangement";
 import { PublishSong } from "@/application/publish-song";
+import { FakeRecordingInfo } from "./support/fake-recording-info";
 import { InMemorySongRepository } from "./support/in-memory-song-repository";
 
 const ACTOR = { id: "user-1", name: "Ana", role: "user" } as const;
@@ -23,7 +24,7 @@ describe("AddArrangement", () => {
   beforeEach(async () => {
     repository = new InMemorySongRepository();
     addArrangement = new AddArrangement(repository);
-    await new PublishSong(repository).execute({
+    await new PublishSong(repository, new FakeRecordingInfo()).execute({
       title: "Cielito lindo",
       artist: "Tradicional",
       key: "C",

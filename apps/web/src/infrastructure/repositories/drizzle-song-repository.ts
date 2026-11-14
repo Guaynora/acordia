@@ -10,6 +10,13 @@ import type {
 import type { Database } from "../db/client";
 import { arrangements, recordings, songs, users } from "../db/schema";
 
+/**
+ * Minimum pg_trgm word similarity for a search hit. 0.5 keeps typos such as
+ * "besame muxo" (0.75) or "hotel califronia" (0.65) and drops unrelated
+ * titles that share a few letters (usually under 0.4).
+ */
+const WORD_SIMILARITY = 0.5;
+
 export class DrizzleSongRepository implements SongRepository {
   constructor(private readonly db: Database) {}
 
@@ -28,16 +35,20 @@ export class DrizzleSongRepository implements SongRepository {
     if (query === "") {
       return this.db.select(columns).from(songs).orderBy(desc(songs.createdAt)).limit(limit);
     }
-    // Accent-insensitive match on title or artist ("cancion" finds "Canción").
+    // Accent-insensitive and typo-tolerant: "cielito lnido" finds "Cielito
+    // lindo". A plain substring also matches, so "ciel" works while typing.
     const pattern = `%${query.replace(/[\\%_]/g, "\\$&")}%`;
-    return this.db
-      .select(columns)
-      .from(songs)
-      .where(
-        sql`unaccent(${songs.title}) ilike unaccent(${pattern}) or unaccent(${songs.artist}) ilike unaccent(${pattern})`,
-      )
-      .orderBy(asc(songs.title))
-      .limit(limit);
+    const normalized = sql`acordia_unaccent(${query})`;
+    return this.db.transaction(async (tx) => {
+      // Applies to this transaction only; the default 0.6 misses common typos.
+      await tx.execute(sql`select set_config('pg_trgm.word_similarity_threshold', ${String(WORD_SIMILARITY)}, true)`);
+      return tx
+        .select(columns)
+        .from(songs)
+        .where(sql`${songs.searchText} like acordia_unaccent(${pattern}) or ${normalized} <% ${songs.searchText}`)
+        .orderBy(sql`word_similarity(${normalized}, ${songs.searchText}) desc`, asc(songs.title))
+        .limit(limit);
+    });
   }
 
   async findBySlug(slug: string): Promise<Song | null> {
@@ -83,6 +94,9 @@ export class DrizzleSongRepository implements SongRepository {
         provider: r.provider,
         externalId: r.externalId,
         key: r.key,
+        title: r.title,
+        authorName: r.authorName,
+        thumbnailUrl: r.thumbnailUrl,
       })),
     };
   }
@@ -109,7 +123,15 @@ export class DrizzleSongRepository implements SongRepository {
       if (!song) throw new Error("Song insert returned no row");
       await tx.insert(arrangements).values({ songId: song.id, ...input.arrangement });
       if (input.recordings.length > 0) {
-        await tx.insert(recordings).values(input.recordings.map((r) => ({ songId: song.id, addedBy: input.createdBy, ...r })));
+        await tx.insert(recordings).values(input.recordings.map(({ provider, externalId, info }) => ({
+              songId: song.id,
+              addedBy: input.createdBy,
+              provider,
+              externalId,
+              title: info?.title ?? null,
+              authorName: info?.authorName ?? null,
+              thumbnailUrl: info?.thumbnailUrl ?? null,
+            })));
       }
       return song.id;
     });

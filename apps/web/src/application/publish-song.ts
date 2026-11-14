@@ -1,6 +1,6 @@
-import { parseRecordingUrl, type RecordingReference } from "@/domain/recording-url";
+import { type RecordingInfoProvider, type RecordingReference, parseRecordingUrl } from "@/domain/recording-url";
 import { slugify } from "@/domain/slug";
-import type { SongRepository } from "@/domain/song-repository";
+import type { NewRecording, SongRepository } from "@/domain/song-repository";
 import type { Actor } from "@/domain/user";
 import { type InputError, validateMusic } from "./song-input";
 
@@ -20,7 +20,10 @@ export type PublishSongResult =
 
 /** Creates a song together with its first ("Original") arrangement. */
 export class PublishSong {
-  constructor(private readonly songs: SongRepository) {}
+  constructor(
+    private readonly songs: SongRepository,
+    private readonly recordingInfo: RecordingInfoProvider,
+  ) {}
 
   async execute(input: PublishSongInput, actor: Actor): Promise<PublishSongResult> {
     const errors: InputError[] = [];
@@ -33,14 +36,27 @@ export class PublishSong {
     const { errors: musicErrors, music } = validateMusic(input, { optionalMeter: false });
     errors.push(...musicErrors);
 
-    const recordings: RecordingReference[] = [];
+    const links: { url: string; reference: RecordingReference }[] = [];
     for (const url of input.recordingUrls.map((u) => u.trim()).filter(Boolean)) {
       const reference = parseRecordingUrl(url);
-      if (reference) recordings.push(reference);
+      if (reference) links.push({ url, reference });
       else errors.push({ field: "recordings", code: "invalid_recording_url", detail: url });
     }
 
     if (errors.length > 0 || !music) return { ok: false, errors };
+
+    // Ask the providers only once the rest of the form is valid.
+    const recordings: NewRecording[] = [];
+    const lookups = await Promise.all(dedupe(links).map(async (link) => ({ link, result: await this.recordingInfo.lookup(link.reference) })));
+    for (const { link, result } of lookups) {
+      if (result.status === "missing") {
+        errors.push({ field: "recordings", code: "recording_not_found", detail: link.url });
+      } else {
+        // Unreachable provider: keep the link, just without a title.
+        recordings.push({ ...link.reference, info: result.status === "found" ? result.info : null });
+      }
+    }
+    if (errors.length > 0) return { ok: false, errors };
 
     const slug = await this.uniqueSlug(slugify(title, artist) || "song");
     await this.songs.create({
@@ -63,7 +79,7 @@ export class PublishSong {
         timeSignature: null,
         chordpro: music.chordpro,
       },
-      recordings: dedupe(recordings),
+      recordings,
     });
     return { ok: true, slug };
   }
@@ -75,9 +91,9 @@ export class PublishSong {
   }
 }
 
-function dedupe(recordings: RecordingReference[]): RecordingReference[] {
+function dedupe<T extends { reference: RecordingReference }>(links: T[]): T[] {
   const seen = new Set<string>();
-  return recordings.filter((r) => {
+  return links.filter(({ reference: r }) => {
     const id = `${r.provider}:${r.externalId}`;
     if (seen.has(id)) return false;
     seen.add(id);

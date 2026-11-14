@@ -53,7 +53,6 @@
     "capoSuggested": "suggested",
     "playShapes": "Sounds in {sounding}. With the capo on fret {fret} you play {key} shapes.",
     "tempo": "{bpm} BPM",
-    "recordings": "Recordings",
     "chordErrors": "This song has chords that could not be transposed: {chords}",
     "sections": {
       "verse": "Verse",
@@ -108,6 +107,11 @@
       "noShape": "There is no playable shape for {chord} on this instrument.",
       "capoShape": "Capo on {capo}: {shape} shapes, sounding {sounding}.",
       "generated": "Computed position: no finger numbers."
+    },
+    "recordingLabels": {
+      "title": "Recordings",
+      "play": "Play “{title}”",
+      "untitled": "Recording"
     }
   },
   "metronome": {
@@ -157,7 +161,8 @@
       "not_found": "This song no longer exists.",
       "invalid_kind": "Invalid version type.",
       "forbidden": "Only the person who uploaded this version (or a moderator) can change it.",
-      "original_has_versions": "This is the original version and the song has other versions, so it cannot be deleted."
+      "original_has_versions": "This is the original version and the song has other versions, so it cannot be deleted.",
+      "recording_not_found": "Could not find {detail}: the video does not exist or is private."
     },
     "tap": "Tap",
     "subtitle": "Paste chords the way you would copy them from another site. We check every chord and show how it looks before publishing.",

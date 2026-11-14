@@ -11,6 +11,10 @@ export interface Recording {
   readonly externalId: string;
   /** Key the recording is played in, when it differs from the song's. */
   readonly key: string | null;
+  /** From the provider when the link was added; null if it could not be read. */
+  readonly title: string | null;
+  readonly authorName: string | null;
+  readonly thumbnailUrl: string | null;
 }
 
 export const ARRANGEMENT_KINDS = ["original", "simplified", "reharmonization", "acoustic", "piano", "other"] as const;
