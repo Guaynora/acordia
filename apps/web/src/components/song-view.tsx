@@ -143,8 +143,10 @@ export function SongView({
   const pickChord = (symbol: string) => {
     const index = view.shown.indexOf(symbol);
     if (index < 0) return;
-    setSelected(index);
-    setPanelOpen(true);
+    // Tapping the selected chord again deselects it and closes the phone panel.
+    const same = index === selected;
+    setSelected(same ? null : index);
+    setPanelOpen(!same);
   };
   const panel = (onClose?: () => void) => (
     <InstrumentPanel

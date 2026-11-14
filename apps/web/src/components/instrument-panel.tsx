@@ -117,7 +117,7 @@ export function InstrumentPanel({
   chords: readonly string[];
   shapeChords: readonly string[];
   selected: number | null;
-  onSelect: (index: number) => void;
+  onSelect: (index: number | null) => void;
   capo: number;
   labels: InstrumentLabels;
   onClose?: (() => void) | undefined;
@@ -181,7 +181,8 @@ export function InstrumentPanel({
               key={chord}
               type="button"
               aria-pressed={selected === index}
-              onClick={() => onSelect(index)}
+              // Picking the chord shown again clears the selection.
+              onClick={() => onSelect(selected === index ? null : index)}
               className="rounded-full border border-border-strong px-2.5 py-1 font-mono text-xs font-bold text-accent hover:bg-accent-soft aria-pressed:border-accent aria-pressed:bg-accent aria-pressed:text-accent-foreground"
             >
               {chord}
