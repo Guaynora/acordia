@@ -2,7 +2,7 @@ import { asc, desc, eq, sql } from "drizzle-orm";
 import type { Song, SongSummary } from "@/domain/song";
 import type { NewArrangement, NewSong, SongRepository } from "@/domain/song-repository";
 import type { Database } from "../db/client";
-import { arrangements, recordings, songs } from "../db/schema";
+import { arrangements, recordings, songs, users } from "../db/schema";
 
 export class DrizzleSongRepository implements SongRepository {
   constructor(private readonly db: Database) {}
@@ -38,7 +38,12 @@ export class DrizzleSongRepository implements SongRepository {
     const [song] = await this.db.select().from(songs).where(eq(songs.slug, slug)).limit(1);
     if (!song) return null;
     const [songArrangements, songRecordings] = await Promise.all([
-      this.db.select().from(arrangements).where(eq(arrangements.songId, song.id)).orderBy(asc(arrangements.createdAt)),
+      this.db
+        .select({ arrangement: arrangements, authorDisplayName: users.name })
+        .from(arrangements)
+        .leftJoin(users, eq(users.id, arrangements.authorId))
+        .where(eq(arrangements.songId, song.id))
+        .orderBy(asc(arrangements.createdAt)),
       this.db.select().from(recordings).where(eq(recordings.songId, song.id)).orderBy(asc(recordings.createdAt)),
     ]);
     return {
@@ -49,13 +54,15 @@ export class DrizzleSongRepository implements SongRepository {
       originalKey: song.originalKey,
       tempo: song.tempo,
       timeSignature: song.timeSignature,
-      arrangements: songArrangements.map((a) => ({
+      arrangements: songArrangements.map(({ arrangement: a, authorDisplayName }) => ({
         id: a.id,
         slug: a.slug,
         name: a.name,
         kind: a.kind,
         description: a.description,
-        authorName: a.authorName,
+        authorId: a.authorId,
+        // The account's current name wins over the legacy free-text credit.
+        authorName: authorDisplayName ?? a.authorName,
         key: a.key,
         tempo: a.tempo,
         timeSignature: a.timeSignature,
@@ -87,12 +94,13 @@ export class DrizzleSongRepository implements SongRepository {
           originalKey: input.originalKey,
           tempo: input.tempo,
           timeSignature: input.timeSignature,
+          createdBy: input.createdBy,
         })
         .returning({ id: songs.id });
       if (!song) throw new Error("Song insert returned no row");
       await tx.insert(arrangements).values({ songId: song.id, ...input.arrangement });
       if (input.recordings.length > 0) {
-        await tx.insert(recordings).values(input.recordings.map((r) => ({ songId: song.id, ...r })));
+        await tx.insert(recordings).values(input.recordings.map((r) => ({ songId: song.id, addedBy: input.createdBy, ...r })));
       }
       return song.id;
     });

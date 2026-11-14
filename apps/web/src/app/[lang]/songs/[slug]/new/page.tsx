@@ -1,11 +1,13 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { lang as rootLang } from "next/root-params";
 import { Suspense } from "react";
 import { UploadForm } from "@/components/upload-form";
 import { type Locale, hasLocale } from "@/i18n/config";
 import { type Dictionary, getDictionary } from "@/i18n/dictionaries";
 import { format } from "@/i18n/format";
+import { getCurrentUser } from "@/infrastructure/auth/current-user";
 import { useCases } from "@/infrastructure/container";
+import { loginPath } from "../../../return-path";
 import { addVersionAction } from "./actions";
 
 export default async function NewVersionPage({ params }: PageProps<"/[lang]/songs/[slug]/new">) {
@@ -22,8 +24,9 @@ export default async function NewVersionPage({ params }: PageProps<"/[lang]/song
 
 async function Content({ lang, dict, params }: { lang: Locale; dict: Dictionary; params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const song = await useCases.getSong().execute(slug);
+  const [user, song] = await Promise.all([getCurrentUser(), useCases.getSong().execute(slug)]);
   if (!song) notFound();
+  if (!user) redirect(loginPath(lang, `/${lang}/songs/${song.slug}/new`));
 
   return (
     <div className="flex flex-col gap-6">
@@ -42,6 +45,7 @@ async function Content({ lang, dict, params }: { lang: Locale; dict: Dictionary;
         labels={dict.upload}
         song={dict.song}
         markings={dict.tempoMarkings}
+        publisher={user.name}
       />
     </div>
   );

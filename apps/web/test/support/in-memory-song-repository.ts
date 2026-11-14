@@ -1,13 +1,19 @@
 import type { Arrangement, Song, SongSummary } from "@/domain/song";
 import type { NewArrangement, NewSong, SongRepository } from "@/domain/song-repository";
 
+/** The fields a stored song exposes, without the owner (not part of the read model). */
+function summaryFields(song: NewSong) {
+  const { slug, title, artist, originalKey, tempo, timeSignature } = song;
+  return { slug, title, artist, originalKey, tempo, timeSignature };
+}
+
 /** In-memory adapter: use cases run in tests without a database. */
 export class InMemorySongRepository implements SongRepository {
   readonly songs: NewSong[] = [];
   readonly extraArrangements = new Map<string, NewArrangement[]>();
 
   async search(): Promise<SongSummary[]> {
-    return this.songs.map((s) => ({ ...s, arrangementCount: 1 + (this.extraArrangements.get(s.slug)?.length ?? 0) }));
+    return this.songs.map((s) => ({ ...summaryFields(s), arrangementCount: 1 + (this.extraArrangements.get(s.slug)?.length ?? 0) }));
   }
 
   async findBySlug(slug: string): Promise<Song | null> {
@@ -15,9 +21,9 @@ export class InMemorySongRepository implements SongRepository {
     if (!song) return null;
     const all = [song.arrangement, ...(this.extraArrangements.get(slug) ?? [])];
     return {
-      ...song,
+      ...summaryFields(song),
       id: slug,
-      arrangements: all.map((a, i): Arrangement => ({ ...a, id: String(i), createdAt: new Date(i) })),
+      arrangements: all.map((a, i): Arrangement => ({ ...a, id: String(i), authorName: null, createdAt: new Date(i) })),
       recordings: song.recordings.map((r, i) => ({ id: String(i), ...r, key: null })),
     };
   }

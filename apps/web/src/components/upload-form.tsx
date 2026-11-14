@@ -56,12 +56,15 @@ export function UploadForm({
   labels,
   song: songLabels,
   markings,
+  publisher,
 }: {
   action: Action;
   mode: FormMode;
   labels: Dictionary["upload"];
   song: Dictionary["song"];
   markings: Dictionary["tempoMarkings"];
+  /** Display name of the signed-in user the version will be credited to. */
+  publisher: string;
 }) {
   const isVersion = mode.kind === "version";
   const [state, formAction, pending] = useActionState(action, INITIAL);
@@ -73,7 +76,6 @@ export function UploadForm({
     name: "",
     kind: "reharmonization",
     description: "",
-    authorName: "",
     key: "",
     tempo: "",
     // Empty in a version means "same as the song".
@@ -304,16 +306,7 @@ export function UploadForm({
             </Field>
           )}
 
-          <Field label={labels.authorLabel} help={labels.authorHelp} errors={[]}>
-            <input
-              name="authorName"
-              maxLength={80}
-              value={fields.authorName}
-              onChange={set("authorName")}
-              autoComplete="name"
-              className="input"
-            />
-          </Field>
+          <p className="text-sm text-muted">{format(labels.publishingAs, { name: publisher })}</p>
 
           {(state.unexpected || songErrors.length > 0) && (
             <p role="alert" className="text-sm text-danger">

@@ -27,7 +27,9 @@ export interface Arrangement {
   readonly name: string;
   readonly kind: ArrangementKind;
   readonly description: string | null;
-  /** Free text until user accounts exist. */
+  /** Account that published this version; null for versions from before accounts. */
+  readonly authorId: string | null;
+  /** The author's current display name, or the free-text name older versions carried. */
   readonly authorName: string | null;
   /** Key the ChordPro source is written in. */
   readonly key: string;

@@ -6,7 +6,7 @@ export interface NewArrangement {
   readonly name: string;
   readonly kind: ArrangementKind;
   readonly description: string | null;
-  readonly authorName: string | null;
+  readonly authorId: string;
   readonly key: string;
   readonly tempo: number | null;
   readonly timeSignature: string | null;
@@ -20,6 +20,8 @@ export interface NewSong {
   readonly originalKey: string;
   readonly tempo: number | null;
   readonly timeSignature: string;
+  /** Account that publishes the song; also credited for its recordings. */
+  readonly createdBy: string;
   readonly arrangement: NewArrangement;
   readonly recordings: readonly RecordingReference[];
 }

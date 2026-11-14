@@ -2,9 +2,22 @@
  * Seeds a public-domain song through the real use case, so the importer and
  * validation run exactly as they do for user uploads.
  */
+import { eq } from "drizzle-orm";
 import { PublishSong } from "../../application/publish-song";
-import { getDb } from "./client";
+import type { Actor } from "../../domain/user";
 import { DrizzleSongRepository } from "../repositories/drizzle-song-repository";
+import { type Database, getDb } from "./client";
+import { users } from "./schema";
+
+/** System account credited for seeded content. It has no login method. */
+const SEED_EMAIL = "seed@acordia.invalid";
+
+async function seedUser(db: Database): Promise<Actor> {
+  await db.insert(users).values({ name: "Acordia", email: SEED_EMAIL }).onConflictDoNothing();
+  const [user] = await db.select({ id: users.id, name: users.name }).from(users).where(eq(users.email, SEED_EMAIL));
+  if (!user) throw new Error("Seed user could not be created");
+  return user;
+}
 
 /** Builds a chord line with each chord at the given column. */
 function chords(...placed: [number, string][]): string {
@@ -35,7 +48,8 @@ const CIELITO_LINDO = [
 ].join("\n");
 
 async function main() {
-  const repository = new DrizzleSongRepository(getDb());
+  const db = getDb();
+  const repository = new DrizzleSongRepository(db);
   if (await repository.slugExists("cielito-lindo-tradicional")) {
     console.log("Seed already applied.");
     return;
@@ -48,7 +62,7 @@ async function main() {
     timeSignature: "3/4",
     source: CIELITO_LINDO,
     recordingUrls: [],
-  });
+  }, await seedUser(db));
   console.log(result);
 }
 

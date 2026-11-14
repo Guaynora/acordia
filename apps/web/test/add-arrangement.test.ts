@@ -3,12 +3,13 @@ import { AddArrangement } from "@/application/add-arrangement";
 import { PublishSong } from "@/application/publish-song";
 import { InMemorySongRepository } from "./support/in-memory-song-repository";
 
+const ACTOR = { id: "user-1", name: "Ana" };
+
 const VERSION = {
   songSlug: "cielito-lindo-tradicional",
   name: "Rearmonización jazz",
   kind: "reharmonization",
   description: "Con dominantes secundarias",
-  authorName: "Jonathan",
   key: "C",
   tempo: "",
   timeSignature: "",
@@ -30,11 +31,11 @@ describe("AddArrangement", () => {
       timeSignature: "3/4",
       source: "C\nDe la Sierra Morena",
       recordingUrls: [],
-    });
+    }, ACTOR);
   });
 
   it("adds a version that inherits the song's tempo and meter", async () => {
-    const result = await addArrangement.execute(VERSION);
+    const result = await addArrangement.execute(VERSION, ACTOR);
     expect(result).toEqual({ ok: true, songSlug: "cielito-lindo-tradicional", arrangementSlug: "rearmonizacion-jazz" });
 
     const song = await repository.findBySlug("cielito-lindo-tradicional");
@@ -42,7 +43,7 @@ describe("AddArrangement", () => {
     expect(song?.arrangements[1]).toMatchObject({
       name: "Rearmonización jazz",
       kind: "reharmonization",
-      authorName: "Jonathan",
+      authorId: "user-1",
       tempo: null,
       timeSignature: null,
       chordpro: "[Cmaj7]De la Sie[A7]rra Morena",
@@ -50,28 +51,28 @@ describe("AddArrangement", () => {
   });
 
   it("stores tempo and meter only when they change the feel", async () => {
-    await addArrangement.execute({ ...VERSION, tempo: "120", timeSignature: "6/8" });
+    await addArrangement.execute({ ...VERSION, tempo: "120", timeSignature: "6/8" }, ACTOR);
     const song = await repository.findBySlug("cielito-lindo-tradicional");
     expect(song?.arrangements[1]).toMatchObject({ tempo: null, timeSignature: "6/8" });
   });
 
   it("keeps version slugs unique within the song and avoids reserved words", async () => {
-    await addArrangement.execute(VERSION);
-    const second = await addArrangement.execute(VERSION);
-    const reserved = await addArrangement.execute({ ...VERSION, name: "New" });
+    await addArrangement.execute(VERSION, ACTOR);
+    const second = await addArrangement.execute(VERSION, ACTOR);
+    const reserved = await addArrangement.execute({ ...VERSION, name: "New" }, ACTOR);
     expect(second).toMatchObject({ arrangementSlug: "rearmonizacion-jazz-2" });
     expect(reserved).toMatchObject({ arrangementSlug: "new-2" });
   });
 
   it("validates name, kind and chords", async () => {
-    const result = await addArrangement.execute({ ...VERSION, name: " ", kind: "metal", source: "Hm\nla la" });
+    const result = await addArrangement.execute({ ...VERSION, name: " ", kind: "metal", source: "Hm\nla la" }, ACTOR);
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.errors.map((e) => `${e.field}:${e.code}`)).toEqual(["name:required", "kind:invalid_kind", "source:unknown_chord"]);
   });
 
   it("fails for an unknown song", async () => {
-    const result = await addArrangement.execute({ ...VERSION, songSlug: "nope" });
+    const result = await addArrangement.execute({ ...VERSION, songSlug: "nope" }, ACTOR);
     expect(result).toEqual({ ok: false, errors: [{ field: "song", code: "not_found" }] });
   });
 });
