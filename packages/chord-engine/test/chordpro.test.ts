@@ -105,3 +105,23 @@ describe("suggestCapos", () => {
     expect(options).toEqual(["1:D", "3:C", "6:A"]);
   });
 });
+
+describe("importing bar lines", () => {
+  it("keeps bar lines on a chord-only line instead of reporting them as chords", () => {
+    const { chordpro, errors } = importChordsOverLyrics("| G   D | Em  C ||");
+    expect(errors).toEqual([]);
+    expect(chordpro).toBe("| [G] [D] | [Em] [C] |");
+  });
+
+  it("splits bar lines glued to chords", () => {
+    expect(importChordsOverLyrics("|G  |C D|").chordpro).toBe("| [G] | [C] [D] |");
+  });
+
+  it("places bar lines over lyrics at their column", () => {
+    // Bars at columns 0, 9 and 23; chords over "Walking", "down" and "the".
+    const chords = "| G      |C    D       |";
+    const { chordpro } = importChordsOverLyrics([chords, "  Walking down the road"].join("\n"));
+    // The lyrics keep their own spacing; each mark goes in at its column.
+    expect(chordpro).toBe("|  [G]Walking| [C]down [D]the road|");
+  });
+});

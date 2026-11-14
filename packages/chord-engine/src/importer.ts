@@ -18,16 +18,20 @@ const LINE_DECORATION = /^\(?x\d+\)?$/i;
 const SECTION_IN_BRACKETS = /^\s*\[([^\]]+)\]\s*$/;
 const SECTION_WITH_COLON = /^\s*([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ0-9 .]{0,30}):\s*$/;
 
+/** Bar lines on a chord line ("|", or "||" at the end of a section). */
+const BAR_LINE = /^\|+$/;
+
+/** Words of a line; bar lines are tokens of their own even when glued ("|G"). */
 function tokenize(line: string): Token[] {
   const tokens: Token[] = [];
-  for (const match of line.matchAll(/\S+/g)) {
+  for (const match of line.matchAll(/\|+|[^\s|]+/g)) {
     tokens.push({ text: match[0], column: match.index ?? 0 });
   }
   return tokens;
 }
 
 type LineKind =
-  | { readonly kind: "chords"; readonly tokens: Token[]; readonly unknown: Token[] }
+  | { readonly kind: "chords"; readonly tokens: Token[]; readonly bars: Token[]; readonly unknown: Token[] }
   | { readonly kind: "text" };
 
 /**
@@ -37,7 +41,9 @@ type LineKind =
  * before publishing.
  */
 function classify(line: string): LineKind {
-  const tokens = tokenize(line).filter((t) => !LINE_DECORATION.test(t.text));
+  const words = tokenize(line).filter((t) => !LINE_DECORATION.test(t.text));
+  const bars = words.filter((t) => BAR_LINE.test(t.text));
+  const tokens = words.filter((t) => !BAR_LINE.test(t.text));
   if (tokens.length === 0) return { kind: "text" };
   const chords = tokens.filter((t) => isNonChordMarker(t.text) || parseChord(t.text));
   const realChords = chords.filter((t) => !isNonChordMarker(t.text));
@@ -45,7 +51,7 @@ function classify(line: string): LineKind {
   const mostlyChords = realChords.length > 0 && chords.length * 2 >= tokens.length;
   if (!mostlyChords && !allChordLike) return { kind: "text" };
   const unknown = tokens.filter((t) => !chords.includes(t));
-  return { kind: "chords", tokens, unknown };
+  return { kind: "chords", tokens, bars, unknown };
 }
 
 function sectionName(line: string): string | null {
@@ -56,12 +62,22 @@ function sectionName(line: string): string | null {
   return null;
 }
 
-/** Places each chord into the lyric line at the column where it stood. */
-function mergeChordsIntoLyrics(chords: Token[], lyrics: string): string {
-  const width = Math.max(lyrics.length, ...chords.map((c) => c.column));
+/** How a chord or a bar line is written in ChordPro. */
+const toChordPro = (token: Token, bars: readonly Token[]) => (bars.includes(token) ? "|" : `[${token.text}]`);
+
+/** Chords and bar lines of a chord line, left to right. */
+const inOrder = (chords: Token[], bars: Token[]) => [...chords, ...bars].sort((a, b) => a.column - b.column);
+
+/**
+ * Places each chord (and bar line) into the lyric line at the column where
+ * it stood, so "| G      D |" over a line keeps its bars.
+ */
+function mergeChordsIntoLyrics(chords: Token[], bars: Token[], lyrics: string): string {
+  const marks = inOrder(chords, bars);
+  const width = Math.max(lyrics.length, ...marks.map((c) => c.column));
   let merged = lyrics.padEnd(width);
-  for (const chord of [...chords].reverse()) {
-    merged = `${merged.slice(0, chord.column)}[${chord.text}]${merged.slice(chord.column)}`;
+  for (const mark of marks.reverse()) {
+    merged = `${merged.slice(0, mark.column)}${toChordPro(mark, bars)}${merged.slice(mark.column)}`;
   }
   return merged.trimEnd();
 }
@@ -118,10 +134,10 @@ export function importChordsOverLyrics(text: string): ImportResult {
     const nextIsLyrics =
       next !== undefined && next.trim() !== "" && classify(next).kind === "text" && !sectionName(next);
     if (nextIsLyrics) {
-      output.push(mergeChordsIntoLyrics(kind.tokens, next));
+      output.push(mergeChordsIntoLyrics(kind.tokens, kind.bars, next));
       i++;
     } else {
-      output.push(kind.tokens.map((t) => `[${t.text}]`).join(" "));
+      output.push(inOrder(kind.tokens, kind.bars).map((t) => toChordPro(t, kind.bars)).join(" "));
     }
   }
   closeSection();
