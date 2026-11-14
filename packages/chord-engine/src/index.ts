@@ -9,6 +9,7 @@ export * from "./capo";
 export * from "./song";
 export * from "./tempo-directives";
 export * from "./performance";
+export * from "./degrees";
 export * from "./suggest";
 export * from "./tones";
 export * from "./fretted";
