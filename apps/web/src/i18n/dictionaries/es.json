@@ -87,7 +87,19 @@
     "deleteConfirm": "¿Borrar esta versión? No se puede deshacer.",
     "deleteSongConfirm": "Es la única versión: se borrará la canción entera. No se puede deshacer.",
     "deleteYes": "Sí, borrar",
-    "cannotDeleteOriginal": "No se puede borrar la versión original mientras la canción tenga otras versiones."
+    "cannotDeleteOriginal": "No se puede borrar la versión original mientras la canción tenga otras versiones.",
+    "instruments": {
+      "title": "Cómo tocarlo",
+      "piano": "Piano",
+      "bass": "Bajo",
+      "pick": "Toca un acorde de la letra para ver cómo se toca.",
+      "bassNote": "Toca {note} en cualquiera de estas posiciones.",
+      "soundingHint": "Con cejilla, piano y bajo ven los acordes que suenan, no las formas de guitarra.",
+      "close": "Cerrar",
+      "noTones": "No sabemos dibujar {chord} todavía.",
+      "leftHand": "Mano izquierda (bajo)",
+      "rightHand": "Mano derecha"
+    }
   },
   "metronome": {
     "title": "Metrónomo",

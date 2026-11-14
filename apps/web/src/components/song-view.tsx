@@ -2,7 +2,10 @@
 
 import {
   type Key,
+  type ParsedSong,
   formatKey,
+  isNonChordMarker,
+  parseChord,
   parseChordProSong,
   parseKey,
   shapeKey,
@@ -13,6 +16,7 @@ import {
 import { type ReactNode, useMemo, useState } from "react";
 import { format } from "@/i18n/format";
 import { ChordSheet, type SectionLabels } from "./chord-sheet";
+import { type InstrumentLabels, InstrumentPanel } from "./instrument-panel";
 
 export interface SongViewLabels {
   readonly key: string;
@@ -33,6 +37,19 @@ export interface SongViewLabels {
   readonly fontLarger: string;
   readonly metronomeShortcut: string;
   readonly sections: SectionLabels;
+  readonly instruments: InstrumentLabels;
+}
+
+/** Distinct chords in order of first appearance, skipping markers like N.C. */
+function distinctChords(song: ParsedSong): string[] {
+  const seen = new Set<string>();
+  for (const line of song.lines) {
+    if (line.kind !== "lyrics") continue;
+    for (const { chord } of line.segments) {
+      if (chord && !isNonChordMarker(chord) && parseChord(chord)) seen.add(chord);
+    }
+  }
+  return [...seen];
 }
 
 const MAX_CAPO = 7;
@@ -58,6 +75,10 @@ export function SongView({
   const [semitones, setSemitones] = useState(0);
   const [capo, setCapo] = useState(0);
   const [fontIndex, setFontIndex] = useState(DEFAULT_FONT_INDEX);
+  // Index into the song's distinct chords; the same index in the shown and
+  // the sounding lists, which only differ when a capo is set.
+  const [selected, setSelected] = useState<number | null>(null);
+  const [panelOpen, setPanelOpen] = useState(false);
   const original = useMemo(() => parseKey(writtenKey), [writtenKey]);
 
   const view = useMemo(() => {
@@ -66,10 +87,15 @@ export function SongView({
     const sounding: Key = semitones === 0 ? original : transposeKey(original, semitones);
     const shapes = capo === 0 ? sounding : shapeKey(sounding, capo);
     const transposed = transposeChordPro(chordpro, original, shapes);
+    const song = parseChordProSong(transposed.text);
+    // Piano and bass need the chords that sound, not the capo shapes.
+    const soundingSong = capo === 0 ? song : parseChordProSong(transposeChordPro(chordpro, original, sounding).text);
     return {
       sounding,
       shapes,
-      song: parseChordProSong(transposed.text),
+      song,
+      shown: distinctChords(song),
+      soundingChords: distinctChords(soundingSong),
       errors: transposed.errors,
       suggested: suggestCapos(sounding).filter((option) => option.fret > 0),
     };
@@ -88,6 +114,22 @@ export function SongView({
   }
 
   const soundingName = formatKey(view.sounding);
+  const pickChord = (symbol: string) => {
+    const index = view.shown.indexOf(symbol);
+    if (index < 0) return;
+    setSelected(index);
+    setPanelOpen(true);
+  };
+  const panel = (onClose?: () => void) => (
+    <InstrumentPanel
+      chords={view.soundingChords}
+      selected={selected}
+      onSelect={setSelected}
+      capo={capo}
+      labels={labels.instruments}
+      onClose={onClose}
+    />
+  );
   const capoSelect = (className: string) => (
     <select
       aria-label={labels.capo}
@@ -145,7 +187,13 @@ export function SongView({
           </p>
         )}
 
-        <ChordSheet song={view.song} labels={labels.sections} fontSize={fontSize} />
+        <ChordSheet
+          song={view.song}
+          labels={labels.sections}
+          fontSize={fontSize}
+          onChord={pickChord}
+          selectedChord={selected !== null ? (view.shown[selected] ?? null) : null}
+        />
       </section>
 
       {/* Practice tools */}
@@ -201,8 +249,17 @@ export function SongView({
           <p className="mt-3 text-sm text-muted">{labels.capoHelp}</p>
         </section>
 
+        <div className="hidden lg:block">{panel()}</div>
+
         {aside}
       </aside>
+
+      {/* Phone: the picked chord floats above the toolbar, lyrics stay in view */}
+      {panelOpen && selected !== null && (
+        <div className="fixed inset-x-3 bottom-[4.25rem] z-30 max-h-[60vh] overflow-auto rounded-2xl shadow-elevated lg:hidden">
+          {panel(() => setPanelOpen(false))}
+        </div>
+      )}
 
       {/* Phone toolbar: key, capo and text size within thumb reach */}
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/95 px-3 py-2 shadow-elevated backdrop-blur lg:hidden">
