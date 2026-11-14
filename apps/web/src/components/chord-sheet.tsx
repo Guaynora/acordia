@@ -81,11 +81,16 @@ export function ChordSheet({
   song,
   labels,
   fontSize = 18,
+  onChord,
+  selectedChord = null,
 }: {
   song: ParsedSong;
   labels: SectionLabels;
   /** Lyric size in px; chords scale with it. */
   fontSize?: number;
+  /** When given, chords become buttons that report their symbol. */
+  onChord?: (symbol: string) => void;
+  selectedChord?: string | null;
 }) {
   return (
     <div className="flex flex-col gap-7" style={{ fontSize }}>
@@ -111,7 +116,7 @@ export function ChordSheet({
           )}
           <div className="flex flex-col gap-1">
             {block.lines.map((line, i) => (
-              <Line key={i} line={line} />
+              <Line key={i} line={line} onChord={onChord} selectedChord={selectedChord} />
             ))}
           </div>
         </section>
@@ -120,7 +125,26 @@ export function ChordSheet({
   );
 }
 
-function Line({ line }: { line: LyricsOrEmpty }) {
+interface ChordProps {
+  readonly onChord?: ((symbol: string) => void) | undefined;
+  readonly selectedChord: string | null;
+}
+
+function ChordLabel({ symbol, className, onChord, selectedChord }: ChordProps & { symbol: string; className: string }) {
+  if (!onChord) return <span className={className}>{symbol}</span>;
+  return (
+    <button
+      type="button"
+      onClick={() => onChord(symbol)}
+      aria-pressed={selectedChord === symbol}
+      className={`${className} -mx-0.5 cursor-pointer rounded px-0.5 text-left hover:bg-accent-soft aria-pressed:bg-accent aria-pressed:text-accent-foreground`}
+    >
+      {symbol}
+    </button>
+  );
+}
+
+function Line({ line, onChord, selectedChord }: ChordProps & { line: LyricsOrEmpty }) {
   if (line.kind === "empty") return <div className="h-[0.75em]" aria-hidden="true" />;
 
   const chordOnly = line.segments.every((s) => s.text.trim() === "");
@@ -129,9 +153,13 @@ function Line({ line }: { line: LyricsOrEmpty }) {
       <div className="flex flex-wrap gap-x-5 gap-y-1 py-0.5">
         {line.segments.map((segment, i) =>
           segment.chord ? (
-            <span key={i} className="font-mono text-[0.95em] font-bold text-accent">
-              {segment.chord}
-            </span>
+            <ChordLabel
+              key={i}
+              symbol={segment.chord}
+              className="font-mono text-[0.95em] font-bold text-accent"
+              onChord={onChord}
+              selectedChord={selectedChord}
+            />
           ) : null,
         )}
       </div>
@@ -143,7 +171,11 @@ function Line({ line }: { line: LyricsOrEmpty }) {
       {line.segments.map((segment, i) => (
         <span key={i} className="inline-flex flex-col">
           <span className="min-h-[1.35em] pr-[0.6em] font-mono text-[0.9em] font-bold text-accent">
-            {segment.chord ?? ""}
+            {segment.chord ? (
+              <ChordLabel symbol={segment.chord} className="" onChord={onChord} selectedChord={selectedChord} />
+            ) : (
+              ""
+            )}
           </span>
           <span className="whitespace-pre">{segment.text || (segment.chord ? " " : "")}</span>
         </span>

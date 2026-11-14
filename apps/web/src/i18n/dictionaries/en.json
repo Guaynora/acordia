@@ -87,7 +87,19 @@
     "deleteConfirm": "Delete this version? This cannot be undone.",
     "deleteSongConfirm": "This is the only version, so the whole song will be deleted. This cannot be undone.",
     "deleteYes": "Yes, delete",
-    "cannotDeleteOriginal": "The original version cannot be deleted while the song has other versions."
+    "cannotDeleteOriginal": "The original version cannot be deleted while the song has other versions.",
+    "instruments": {
+      "title": "How to play it",
+      "piano": "Piano",
+      "bass": "Bass",
+      "pick": "Tap a chord in the lyrics to see how to play it.",
+      "bassNote": "Play {note} at any of these positions.",
+      "soundingHint": "With a capo, piano and bass see the chords that sound, not the guitar shapes.",
+      "close": "Close",
+      "noTones": "We cannot draw {chord} yet.",
+      "leftHand": "Left hand (bass)",
+      "rightHand": "Right hand"
+    }
   },
   "metronome": {
     "title": "Metronome",
