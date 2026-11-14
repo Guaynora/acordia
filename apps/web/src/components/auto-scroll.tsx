@@ -13,8 +13,6 @@ export interface AutoScrollLabels {
   readonly restart: string;
   readonly tempoMode: string;
   readonly manualMode: string;
-  readonly tempoHelp: string;
-  readonly manualHelp: string;
   readonly speed: string;
 }
 
@@ -283,29 +281,24 @@ export function AutoScrollCard({ scroll, labels }: { scroll: AutoScroll; labels:
         </button>
       </div>
 
-      {scroll.mode === "tempo" ? (
-        <p className="mt-3 text-sm text-muted">{labels.tempoHelp}</p>
-      ) : (
-        <>
-          <label className="mt-4 flex flex-col gap-2">
-            <span className="flex items-center justify-between text-sm">
-              <span>{labels.speed}</span>
-              <span className="font-mono text-xs text-muted tabular-nums">
-                {scroll.speed + 1}/{scroll.speedCount}
-              </span>
+      {scroll.mode === "manual" && (
+        <label className="mt-4 flex flex-col gap-2">
+          <span className="flex items-center justify-between text-sm">
+            <span>{labels.speed}</span>
+            <span className="font-mono text-xs text-muted tabular-nums">
+              {scroll.speed + 1}/{scroll.speedCount}
             </span>
-            <input
-              type="range"
-              min={0}
-              max={scroll.speedCount - 1}
-              step={1}
-              value={scroll.speed}
-              onChange={(e) => scroll.setSpeed(Number(e.target.value))}
-              className="accent-accent"
-            />
-          </label>
-          <p className="mt-3 text-sm text-muted">{labels.manualHelp}</p>
-        </>
+          </span>
+          <input
+            type="range"
+            min={0}
+            max={scroll.speedCount - 1}
+            step={1}
+            value={scroll.speed}
+            onChange={(e) => scroll.setSpeed(Number(e.target.value))}
+            className="accent-accent"
+          />
+        </label>
       )}
     </section>
   );

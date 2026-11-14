@@ -23,13 +23,11 @@ import { type InstrumentLabels, InstrumentPanel } from "./instrument-panel";
 
 export interface SongViewLabels {
   readonly key: string;
-  readonly keyHelp: string;
   readonly originalKey: string;
   readonly transposeDown: string;
   readonly transposeUp: string;
   readonly reset: string;
   readonly capo: string;
-  readonly capoHelp: string;
   readonly noCapo: string;
   readonly capoOption: string;
   readonly capoSuggested: string;
@@ -257,7 +255,6 @@ export function SongView({
                 +
               </button>
             </div>
-            <p className="mt-3 text-sm text-muted">{labels.keyHelp}</p>
           </section>
 
           <section className="card hidden p-5 lg:block">
@@ -278,7 +275,6 @@ export function SongView({
                 ))}
               </div>
             )}
-            <p className="mt-3 text-sm text-muted">{labels.capoHelp}</p>
           </section>
 
           <div className="hidden lg:block">{panel()}</div>

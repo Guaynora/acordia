@@ -21,7 +21,6 @@ export interface InstrumentLabels {
   readonly title: string;
   readonly piano: string;
   readonly bass: string;
-  readonly pick: string;
   readonly bassNote: string;
   readonly soundingHint: string;
   readonly close: string;
@@ -191,9 +190,7 @@ export function InstrumentPanel({
         </div>
       )}
 
-      {!symbol ? (
-        <p className="text-sm text-muted">{labels.pick}</p>
-      ) : !view ? (
+      {!symbol ? null : !view ? (
         <p className="text-sm text-muted">{format(labels.noTones, { chord: symbol })}</p>
       ) : (
         <div className="flex flex-col gap-3">
