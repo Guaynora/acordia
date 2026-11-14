@@ -84,3 +84,17 @@ describe("tempo map", () => {
     expect(mapOf("[C]a\n{tempo: fast}\n{time: 7/7}\n[C]b").sections).toHaveLength(1);
   });
 });
+
+describe("tempo map with repeats", () => {
+  it("applies a change on every pass of a repeated section", () => {
+    const map = mapOf("[G]a\n{start_of_chorus: Coro x2}\n{tempo: 140}\n[C]b\n{tempo: 100}\n[D]c\n{end_of_chorus}\n[G]end");
+    // a | b@140 c@100 | b@140 c@100 | end
+    expect(map.sections.map((s) => [s.bar, s.bpm])).toEqual([
+      [0, 92],
+      [1, 140],
+      [2, 100],
+      [3, 140],
+      [4, 100],
+    ]);
+  });
+});

@@ -122,7 +122,18 @@
     "changes": {
       "tempo": "♩ = {bpm}",
       "ramp": "{from} → {to} BPM over {bars} bars",
-      "key": "Key: {key}"
+      "key": "Key: {key}",
+      "markers": {
+        "ending": "{n}.",
+        "x_segno": "Segno",
+        "x_coda": "Coda",
+        "x_to_coda": "To Coda",
+        "x_fine": "Fine",
+        "x_ds_al_coda": "D.S. al Coda",
+        "x_dc_al_coda": "D.C. al Coda",
+        "x_ds_al_fine": "D.S. al Fine",
+        "x_dc_al_fine": "D.C. al Fine"
+      }
     }
   },
   "metronome": {
@@ -254,6 +265,26 @@
         {
           "code": "{key: Ab}",
           "text": "the section changes key"
+        }
+      ],
+      "repeats": "Repeats: |: to start and :| to end (:|x3 for three times). A whole section: “x2” in its name. Endings and jumps, on their own lines:",
+      "repeatsExample": "Chorus:\n|: G     D   | Em    C   |\n{x_ending: 1}\n|  G     D   | C         :|\n{x_ending: 2}\n|  C     D   | G         |",
+      "repeatItems": [
+        {
+          "code": "{x_ending: 1}",
+          "text": "what follows is the 1st ending (up to :|)"
+        },
+        {
+          "code": "{x_segno} {x_ds_al_coda}",
+          "text": "go back to the Segno"
+        },
+        {
+          "code": "{x_to_coda} {x_coda}",
+          "text": "jump to the Coda the second time"
+        },
+        {
+          "code": "{x_dc_al_fine} {x_fine}",
+          "text": "go back to the top and end at Fine"
         }
       ]
     }

@@ -114,3 +114,30 @@ describe("bar lines", () => {
     expect(timeline.totalBars).toBe(5);
   });
 });
+
+describe("played order", () => {
+  it("times repeated lines again, pointing at the same written lines", () => {
+    const timeline = timelineOf("[G]intro\n|: [C]one\n[D]two :|\n[G]end");
+    expect(timeline.steps.map((s) => [s.line, s.startBar])).toEqual([
+      [0, 0],
+      [1, 1],
+      [2, 2],
+      [1, 3],
+      [2, 4],
+      [3, 5],
+    ]);
+  });
+
+  it("counts |: and :| as bar lines, and || as one", () => {
+    expect(timelineOf("|: [G] | [C] [D] :|").steps.map((s) => s.bars)).toEqual([1, 0.5, 0.5, 1, 0.5, 0.5]);
+    expect(timelineOf("| [G] || [C] |").totalBars).toBe(2);
+  });
+
+  it("marks where each change is reached, once per pass", () => {
+    const repeated = timelineOf("[G]a\n{start_of_chorus: Coro x2}\n{tempo: 140}\n[C]b\n{end_of_chorus}");
+    expect(repeated.marks).toEqual([
+      { line: 2, bar: 1 },
+      { line: 2, bar: 2 },
+    ]);
+  });
+});

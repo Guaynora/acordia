@@ -122,7 +122,18 @@
     "changes": {
       "tempo": "♩ = {bpm}",
       "ramp": "{from} → {to} BPM en {bars} compases",
-      "key": "Tono: {key}"
+      "key": "Tono: {key}",
+      "markers": {
+        "ending": "{n}.ª vez",
+        "x_segno": "Segno",
+        "x_coda": "Coda",
+        "x_to_coda": "Al Coda",
+        "x_fine": "Fine",
+        "x_ds_al_coda": "D.S. al Coda",
+        "x_dc_al_coda": "D.C. al Coda",
+        "x_ds_al_fine": "D.S. al Fine",
+        "x_dc_al_fine": "D.C. al Fine"
+      }
     }
   },
   "metronome": {
@@ -254,6 +265,26 @@
         {
           "code": "{key: Ab}",
           "text": "la sección cambia de tono"
+        }
+      ],
+      "repeats": "Repeticiones: |: al empezar y :| al terminar (:|x3 para tres veces). Una sección entera: «x2» en su nombre. Casillas y saltos, en líneas propias:",
+      "repeatsExample": "Coro:\n|: G     D   | Em    C   |\n{x_ending: 1}\n|  G     D   | C         :|\n{x_ending: 2}\n|  C     D   | G         |",
+      "repeatItems": [
+        {
+          "code": "{x_ending: 1}",
+          "text": "lo que sigue es la 1.ª vez (hasta :|)"
+        },
+        {
+          "code": "{x_segno} {x_ds_al_coda}",
+          "text": "volver al Segno"
+        },
+        {
+          "code": "{x_to_coda} {x_coda}",
+          "text": "saltar a la Coda la segunda vez"
+        },
+        {
+          "code": "{x_dc_al_fine} {x_fine}",
+          "text": "volver al inicio y terminar en Fine"
         }
       ]
     }

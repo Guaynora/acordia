@@ -42,11 +42,6 @@ export interface TempoStart {
 
 const clampBpm = (bpm: number) => Math.min(MAX_TEMPO, Math.max(MIN_TEMPO, bpm));
 
-/** Bar where a line starts: that of the first timed step after it, or the end. */
-function barOfLine(timeline: ScrollTimeline, line: number): number {
-  return timeline.steps.find((step) => step.line > line)?.startBar ?? timeline.totalBars;
-}
-
 export function buildTempoMap(lines: readonly SongLine[], timeline: ScrollTimeline, start: TempoStart): TempoMap {
   let bpm = clampBpm(start.bpm);
   let signature = start.signature;
@@ -61,19 +56,20 @@ export function buildTempoMap(lines: readonly SongLine[], timeline: ScrollTimeli
   // which the song itself already provides.
   const firstLyrics = lines.findIndex((line) => line.kind === "lyrics");
 
-  lines.forEach((line, index) => {
-    if (line.kind !== "change" || firstLyrics < 0 || index < firstLyrics) return;
-    const bar = barOfLine(timeline, index);
+  // Changes in the order they are reached, so one inside a repeat applies on every pass.
+  for (const { line: index, bar } of timeline.marks) {
+    const line = lines[index];
+    if (line?.kind !== "change" || firstLyrics < 0 || index < firstLyrics) continue;
     switch (line.directive) {
       case "tempo": {
         const value = parseTempoValue(line.value);
-        if (value === null) return;
+        if (value === null) continue;
         bpm = clampBpm(value);
         ramp = null;
         break;
       }
       case "time":
-        if (!parseTimeSignature(line.value)) return;
+        if (!parseTimeSignature(line.value)) continue;
         signature = line.value.replace(/\s+/g, "");
         // A grouping belongs to its meter.
         groups = null;
@@ -83,14 +79,14 @@ export function buildTempoMap(lines: readonly SongLine[], timeline: ScrollTimeli
         break;
       case "x_ramp": {
         const parsed = parseRamp(line.value);
-        if (!parsed) return;
+        if (!parsed) continue;
         ramp = { from: clampBpm(parsed.from), to: clampBpm(parsed.to), bars: parsed.bars };
         rampBar = bar;
         bpm = ramp.to;
         break;
       }
       case "key":
-        if (!parseKey(line.value)) return;
+        if (!parseKey(line.value)) continue;
         key = line.value.trim();
         break;
     }
@@ -105,7 +101,7 @@ export function buildTempoMap(lines: readonly SongLine[], timeline: ScrollTimeli
     // Changes written together form one section.
     if (sections.at(-1)?.bar === bar) sections[sections.length - 1] = section;
     else sections.push(section);
-  });
+  }
 
   return { sections };
 }

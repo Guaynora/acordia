@@ -24,10 +24,24 @@ export interface ChangeLabels {
   readonly ramp: string;
   /** "Key: {key}" */
   readonly key: string;
+  /** Endings, segno and coda marks, D.S. and D.C. jumps. */
+  readonly markers: {
+    /** "{n}." */
+    readonly ending: string;
+    readonly x_segno: string;
+    readonly x_coda: string;
+    readonly x_to_coda: string;
+    readonly x_fine: string;
+    readonly x_ds_al_coda: string;
+    readonly x_dc_al_coda: string;
+    readonly x_ds_al_fine: string;
+    readonly x_dc_al_fine: string;
+  };
 }
 
 type LyricsOrEmpty = Extract<SongLine, { kind: "lyrics" } | { kind: "empty" }>;
-type ChangeLine = Extract<SongLine, { kind: "change" }>;
+/** A tempo, meter or key change, or a repeat/jump marker: both show as tags. */
+type ChangeLine = Extract<SongLine, { kind: "change" } | { kind: "marker" }>;
 /** Change directives written together, shown as one row of tags. */
 interface ChangeGroup {
   readonly kind: "changes";
@@ -75,8 +89,10 @@ function toBlocks(song: ParsedSong, labels: SectionLabels): Block[] {
 
   song.lines.forEach((line, index) => {
     switch (line.kind) {
-      case "change": {
-        if (firstLyrics < 0 || index < firstLyrics) break;
+      case "change":
+      case "marker": {
+        // A segno may come first; tempo and key before the lyrics repeat the song's own.
+        if (line.kind === "change" && (firstLyrics < 0 || index < firstLyrics)) break;
         const block: Block = (current ??= open("other", null));
         const last = block.lines.at(-1)?.line;
         if (last?.kind === "changes") last.changes.push(line);
@@ -222,25 +238,44 @@ function SectionLabel({
   );
 }
 
-/** A bar line: present but quiet, so the lyrics stay easy to read. */
-function BarLine() {
+/** Bar lines and repeat signs: "|", "||", "|:", ":|" and ":|x3". */
+const BAR_SIGN = /:?\|+:?(?:\s*\(?x\d+\)?)?/gi;
+
+/** A bar line, quiet so the lyrics stay easy to read; repeat signs stand out a little more. */
+function BarLine({ sign }: { sign: string }) {
+  const repeat = sign.includes(":");
   return (
-    <span aria-hidden="true" className="font-mono font-normal text-muted/60">
-      |
+    <span
+      aria-hidden="true"
+      className={`font-mono ${repeat ? "font-bold text-secondary" : "font-normal text-muted/60"}`}
+    >
+      {sign.replace(/\s+/g, "")}
     </span>
   );
 }
 
-/** Lyrics with their "|" drawn as bar lines. */
+/** Lyrics with their bar lines and repeat signs drawn as such. */
 function withBarLines(text: string): ReactNode {
   if (!text.includes("|")) return text;
-  return text.split("|").flatMap((part, i) => (i === 0 ? [part] : [<BarLine key={i} />, part]));
+  const parts: ReactNode[] = [];
+  let cursor = 0;
+  for (const match of text.matchAll(BAR_SIGN)) {
+    const at = match.index ?? 0;
+    parts.push(text.slice(cursor, at), <BarLine key={at} sign={match[0]} />);
+    cursor = at + match[0].length;
+  }
+  parts.push(text.slice(cursor));
+  return parts;
 }
 
 /** One change as the sheet shows it: "♩ = 140", "7/8", "(2+2+3)", "Key: Ab", a ramp. */
 function changeText(change: ChangeLine, labels: ChangeLabels | undefined): string {
   const value = change.value.trim();
-  if (!labels) return `${change.directive}: ${value}`;
+  if (!labels) return value ? `${change.directive}: ${value}` : change.directive;
+  if (change.kind === "marker") {
+    if (change.directive === "x_ending") return format(labels.markers.ending, { n: value.replace(/\.$/, "") });
+    return labels.markers[change.directive];
+  }
   switch (change.directive) {
     case "tempo":
       return format(labels.tempo, { bpm: value });
@@ -330,7 +365,11 @@ function Line({
   const chordOnly = line.segments.every((s) => s.text.replace(/\|/g, "").trim() === "");
   if (chordOnly) {
     return (
-      <div data-line={index} onClick={start} className={`flex flex-wrap items-baseline gap-x-5 gap-y-1 py-0.5${marker}`}>
+      <div
+        data-line={index}
+        onClick={start}
+        className={`flex flex-wrap items-baseline gap-x-5 gap-y-1 py-0.5${marker}`}
+      >
         {line.segments.flatMap((segment, i) => [
           segment.chord ? (
             <ChordLabel
@@ -342,7 +381,7 @@ function Line({
               playing={playing === i}
             />
           ) : null,
-          ...Array.from(segment.text.matchAll(/\|/g), (_, b) => <BarLine key={`b${i}-${b}`} />),
+          ...Array.from(segment.text.matchAll(BAR_SIGN), (match, b) => <BarLine key={`b${i}-${b}`} sign={match[0]} />),
         ])}
       </div>
     );

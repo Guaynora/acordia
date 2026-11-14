@@ -1,7 +1,9 @@
-import type { SongLine } from "@acordia/chord-engine";
+import { type SongLine, performanceOrder } from "@acordia/chord-engine";
 
 /**
- * When the sheet plays, which line and chord sound at each moment.
+ * When the sheet plays, which line and chord sound at each moment. Lines
+ * are walked in the order they are played (repeats, endings, D.S. jumps),
+ * so a line can appear more than once.
  *
  * A line with bar lines ("|") says how long its chords last: each bar is
  * one bar long, the chords inside a bar share it equally, and a bar without
@@ -27,9 +29,18 @@ export interface ScrollStep {
   readonly bars: number;
 }
 
+/** Where a tempo, meter or key change is reached while playing. */
+export interface ScrollMark {
+  /** Index into the parsed song's `lines`. */
+  readonly line: number;
+  readonly bar: number;
+}
+
 export interface ScrollTimeline {
   readonly steps: readonly ScrollStep[];
   readonly totalBars: number;
+  /** Change lines in the order they are reached, with the bar where each applies. */
+  readonly marks: readonly ScrollMark[];
 }
 
 type Segments = Extract<SongLine, { kind: "lyrics" }>["segments"];
@@ -41,21 +52,26 @@ function barGroups(segments: Segments): number[][] | null {
   const groups: number[][] = [[]];
   segments.forEach((segment, i) => {
     if (hasChord(segment.chord)) groups.at(-1)?.push(i);
-    for (const char of segment.text) if (char === "|") groups.push([]);
+    // "|", "||", "|:" and ":|" are each one bar line.
+    const barLines = segment.text.match(/\|+/g)?.length ?? 0;
+    for (let b = 0; b < barLines; b++) groups.push([]);
   });
   return groups.length > 1 ? groups : null;
 }
 
 export function buildScrollTimeline(lines: readonly SongLine[]): ScrollTimeline {
   const steps: { line: number; segment: number | null; startBar: number; bars: number }[] = [];
+  const marks: ScrollMark[] = [];
   let bar = 0;
   const push = (line: number, segment: number | null, bars: number) => {
     steps.push({ line, segment, startBar: bar, bars });
     bar += bars;
   };
 
-  lines.forEach((line, index) => {
-    if (line.kind !== "lyrics") return;
+  for (const index of performanceOrder(lines)) {
+    const line = lines[index];
+    if (line?.kind === "change") marks.push({ line: index, bar });
+    if (line?.kind !== "lyrics") continue;
 
     const groups = barGroups(line.segments);
     if (groups) {
@@ -77,7 +93,7 @@ export function buildScrollTimeline(lines: readonly SongLine[]): ScrollTimeline 
           push(index, null, 1);
         }
       });
-      return;
+      continue;
     }
 
     let chords = 0;
@@ -90,9 +106,9 @@ export function buildScrollTimeline(lines: readonly SongLine[]): ScrollTimeline 
     if (chords === 0 && line.segments.some((s) => s.text.trim() !== "")) {
       push(index, null, BARS_PER_BARE_LINE);
     }
-  });
+  }
 
-  return { steps, totalBars: bar };
+  return { steps, totalBars: bar, marks };
 }
 
 /**

@@ -4,6 +4,7 @@ import {
   parseChord,
   parseKey,
   validateChordPro,
+  validateStructure,
   validateTempoDirectives,
 } from "@acordia/chord-engine";
 import { MAX_TEMPO, MIN_TEMPO, TIME_SIGNATURES } from "@/domain/song";
@@ -133,6 +134,10 @@ export function validateMusic(
   for (const problem of prepared ? validateTempoDirectives(prepared.chordpro, limits) : []) {
     const directive = `{${problem.directive}: ${problem.value}}`;
     errors.push({ field: "source", code: "invalid_directive", detail: `${directive} (${problem.line})` });
+  }
+  // Repeats, endings and D.S./D.C. jumps.
+  for (const problem of prepared ? validateStructure(prepared.chordpro) : []) {
+    errors.push({ field: "source", code: "invalid_directive", detail: `${problem.text} (${problem.line})` });
   }
 
   if (errors.length > 0 || !key || !prepared || tempo === undefined) return { errors, music: null };

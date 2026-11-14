@@ -449,6 +449,20 @@ function AdvancedHelp({ labels }: { labels: Dictionary["upload"]["advanced"] }) 
           <pre className={example}>{labels.barsExample}</pre>
         </div>
         <div>
+          <p>{labels.repeats}</p>
+          <pre className={example}>{labels.repeatsExample}</pre>
+          <dl className="mt-1.5 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5">
+            {labels.repeatItems.map((item) => (
+              <div key={item.code} className="contents">
+                <dt>
+                  <code className="rounded bg-card px-1.5 py-0.5 font-mono text-xs">{item.code}</code>
+                </dt>
+                <dd className="text-muted">{item.text}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+        <div>
           <p>{labels.changes}</p>
           <dl className="mt-1.5 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5">
             {labels.changesItems.map((item) => (
