@@ -98,7 +98,16 @@
       "close": "Cerrar",
       "noTones": "No sabemos dibujar {chord} todavía.",
       "leftHand": "Mano izquierda (bajo)",
-      "rightHand": "Mano derecha"
+      "rightHand": "Mano derecha",
+      "guitar": "Guitarra",
+      "ukulele": "Ukelele",
+      "position": "{current} de {total}",
+      "previous": "Posición anterior",
+      "next": "Posición siguiente",
+      "loading": "Cargando digitaciones…",
+      "noShape": "No hay una forma tocable de {chord} en este instrumento.",
+      "capoShape": "Con cejilla en {capo}: formas de {shape}, suena {sounding}.",
+      "generated": "Posición calculada: sin números de dedo."
     }
   },
   "metronome": {

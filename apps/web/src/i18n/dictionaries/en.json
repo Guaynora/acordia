@@ -98,7 +98,16 @@
       "close": "Close",
       "noTones": "We cannot draw {chord} yet.",
       "leftHand": "Left hand (bass)",
-      "rightHand": "Right hand"
+      "rightHand": "Right hand",
+      "guitar": "Guitar",
+      "ukulele": "Ukulele",
+      "position": "{current} of {total}",
+      "previous": "Previous position",
+      "next": "Next position",
+      "loading": "Loading fingerings…",
+      "noShape": "There is no playable shape for {chord} on this instrument.",
+      "capoShape": "Capo on {capo}: {shape} shapes, sounding {sounding}.",
+      "generated": "Computed position: no finger numbers."
     }
   },
   "metronome": {

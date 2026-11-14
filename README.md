@@ -45,4 +45,4 @@ Database changes: edit `apps/web/src/infrastructure/db/schema.ts`, then run
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE). Bundled third-party data is listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

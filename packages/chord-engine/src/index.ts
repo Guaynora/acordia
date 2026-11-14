@@ -9,3 +9,4 @@ export * from "./capo";
 export * from "./song";
 export * from "./suggest";
 export * from "./tones";
+export * from "./fretted";
