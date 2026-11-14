@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
-import { THEME_STORAGE_KEY } from "./theme-script";
+import { useEffect, useLayoutEffect } from "react";
+import { THEME_STORAGE_KEY, preferredTheme } from "./theme-script";
 
 type Theme = "light" | "dark";
 
@@ -11,6 +11,21 @@ function currentTheme(): Theme {
 
 /** Sun/moon button that switches between light and dark and remembers the choice. */
 export function ThemeToggle({ toLight, toDark }: { toLight: string; toDark: string }) {
+  // The head script sets data-theme only on a full page load. Switching
+  // language renders the root layout's <html> again and React clears the
+  // attributes it did not set, so put the theme back whenever it goes
+  // missing; the observer fires before the next paint, so nothing flashes.
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+    const restore = () => {
+      if (!root.hasAttribute("data-theme")) root.setAttribute("data-theme", preferredTheme());
+    };
+    restore();
+    const observer = new MutationObserver(restore);
+    observer.observe(root, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => observer.disconnect();
+  }, []);
+
   // Follow system changes until the user picks a theme explicitly.
   useEffect(() => {
     const media = matchMedia("(prefers-color-scheme: dark)");
