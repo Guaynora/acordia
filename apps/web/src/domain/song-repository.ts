@@ -50,4 +50,6 @@ export interface SongRepository {
   deleteArrangement(arrangementId: string): Promise<void>;
   /** Deletes the song with its versions and recordings. */
   deleteSong(songId: string): Promise<void>;
+  /** Links a video or track to a song; "duplicate" when the song already has it. */
+  addRecording(songId: string, recording: NewRecording, addedBy: string): Promise<"added" | "duplicate">;
 }

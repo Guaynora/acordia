@@ -1,5 +1,6 @@
 import "server-only";
 import { AddArrangement } from "@/application/add-arrangement";
+import { AddRecording } from "@/application/add-recording";
 import { DeleteArrangement } from "@/application/delete-arrangement";
 import { EditArrangement } from "@/application/edit-arrangement";
 import { IsFavorite, ListFavorites, SetFavorite } from "@/application/favorites";
@@ -39,4 +40,5 @@ export const useCases = {
   setFavorite: () => new SetFavorite(songRepository(), favoriteRepository()),
   isFavorite: () => new IsFavorite(favoriteRepository()),
   listFavorites: () => new ListFavorites(favoriteRepository()),
+  addRecording: () => new AddRecording(songRepository(), new OEmbedRecordingInfo()),
 };

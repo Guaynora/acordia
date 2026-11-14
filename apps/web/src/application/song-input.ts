@@ -37,6 +37,7 @@ export type InputErrorCode =
   | "invalid_time_signature"
   | "unknown_chord"
   | "invalid_directive"
+  | "duplicate_recording"
   | "invalid_recording_url"
   | "recording_not_found";
 

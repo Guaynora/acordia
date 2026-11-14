@@ -3,6 +3,7 @@ import type { Song, SongSummary } from "@/domain/song";
 import type {
   ArrangementChanges,
   NewArrangement,
+  NewRecording,
   NewSong,
   SongMusicChanges,
   SongRepository,
@@ -162,5 +163,24 @@ export class DrizzleSongRepository implements SongRepository {
   async deleteSong(songId: string): Promise<void> {
     // Versions and recordings go with it (ON DELETE CASCADE).
     await this.db.delete(songs).where(eq(songs.id, songId));
+  }
+
+  async addRecording(songId: string, recording: NewRecording, addedBy: string): Promise<"added" | "duplicate"> {
+    const { provider, externalId, info } = recording;
+    const inserted = await this.db
+      .insert(recordings)
+      .values({
+        songId,
+        provider,
+        externalId,
+        title: info?.title ?? null,
+        authorName: info?.authorName ?? null,
+        thumbnailUrl: info?.thumbnailUrl ?? null,
+        addedBy,
+      })
+      // One row per song, provider and video (recordings_song_provider_external_idx).
+      .onConflictDoNothing()
+      .returning({ id: recordings.id });
+    return inserted.length > 0 ? "added" : "duplicate";
   }
 }

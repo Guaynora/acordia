@@ -117,7 +117,18 @@
     "recordingLabels": {
       "title": "Grabaciones",
       "play": "Reproducir «{title}»",
-      "untitled": "Grabación"
+      "untitled": "Grabación",
+      "add": {
+        "title": "Añadir un video o canción",
+        "placeholder": "Enlace de YouTube o Spotify",
+        "submit": "Añadir",
+        "added": "Añadido.",
+        "login": "Inicia sesión para añadir enlaces.",
+        "invalid": "Pega un enlace de YouTube o Spotify.",
+        "notFound": "No encontramos ese video o canción: puede que no exista o sea privado.",
+        "duplicate": "Esta canción ya tiene ese enlace.",
+        "unexpected": "No se pudo añadir. Inténtalo de nuevo."
+      }
     },
     "changes": {
       "tempo": "♩ = {bpm}",
@@ -214,7 +225,8 @@
       "forbidden": "Solo quien subió esta versión (o un moderador) puede cambiarla.",
       "original_has_versions": "Esta es la versión original y la canción tiene otras versiones: no se puede borrar.",
       "recording_not_found": "No encontramos {detail}: el video no existe o es privado.",
-      "invalid_directive": "Revisa {detail}: el valor no es válido o no encaja con el compás."
+      "invalid_directive": "Revisa {detail}: el valor no es válido o no encaja con el compás.",
+      "duplicate_recording": "Esta canción ya tiene ese enlace."
     },
     "tap": "Tap",
     "subtitle": "Pega los acordes como los copiarías de otra web. Revisamos cada acorde y te mostramos cómo queda antes de publicar.",

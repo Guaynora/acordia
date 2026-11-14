@@ -1,17 +1,26 @@
 import { embedUrl } from "@/domain/recording-url";
 import type { Recording } from "@/domain/song";
 import { format } from "@/i18n/format";
+import { type AddRecordingLabels, AddRecordingForm } from "./add-recording-form";
 import { YouTubePlayer } from "./youtube-player";
 
 export interface RecordingLabels {
   readonly title: string;
   readonly play: string;
   readonly untitled: string;
+  readonly add: AddRecordingLabels;
 }
 
-/** Official provider players; we embed and never host audio. */
-export function Recordings({ recordings, labels }: { recordings: readonly Recording[]; labels: RecordingLabels }) {
-  if (recordings.length === 0) return null;
+/** Official provider players; we embed and never host audio. Anyone signed in can add a link. */
+export function Recordings({
+  recordings,
+  labels,
+  songSlug,
+}: {
+  recordings: readonly Recording[];
+  labels: RecordingLabels;
+  songSlug: string;
+}) {
   return (
     <section className="card space-y-4 p-5">
       <h2 className="font-display text-lg font-semibold">{labels.title}</h2>
@@ -45,6 +54,7 @@ export function Recordings({ recordings, labels }: { recordings: readonly Record
           </figure>
         );
       })}
+      <AddRecordingForm songSlug={songSlug} labels={labels.add} />
     </section>
   );
 }

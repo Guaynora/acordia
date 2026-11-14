@@ -79,7 +79,7 @@ export async function SongPageContent({
               labels={dict.metronome}
               markings={dict.tempoMarkings}
             />
-            <Recordings recordings={song.recordings} labels={dict.song.recordingLabels} />
+            <Recordings recordings={song.recordings} labels={dict.song.recordingLabels} songSlug={song.slug} />
           </>
         }
       />

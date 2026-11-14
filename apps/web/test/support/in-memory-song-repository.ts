@@ -2,6 +2,7 @@ import type { Arrangement, Song, SongSummary } from "@/domain/song";
 import type {
   ArrangementChanges,
   NewArrangement,
+  NewRecording,
   NewSong,
   SongMusicChanges,
   SongRepository,
@@ -11,6 +12,8 @@ interface StoredSong {
   id: string;
   song: Omit<NewSong, "arrangement">;
   arrangements: (NewArrangement & { id: string })[];
+  /** Links added after publishing. */
+  added: NewRecording[];
 }
 
 /** In-memory adapter: use cases run in tests without a database. */
@@ -50,7 +53,7 @@ export class InMemorySongRepository implements SongRepository {
       arrangements: found.arrangements.map(
         (a, i): Arrangement => ({ ...a, authorName: null, authorHandle: null, createdAt: new Date(i) }),
       ),
-      recordings: s.recordings.map(({ info, ...r }, i) => ({
+      recordings: [...s.recordings, ...found.added].map(({ info, ...r }, i) => ({
         id: String(i),
         ...r,
         key: null,
@@ -67,7 +70,7 @@ export class InMemorySongRepository implements SongRepository {
 
   async create(input: NewSong): Promise<Song> {
     const { arrangement, ...song } = input;
-    this.stored.push({ id: this.id(), song, arrangements: [{ ...arrangement, id: this.id() }] });
+    this.stored.push({ id: this.id(), song, arrangements: [{ ...arrangement, id: this.id() }], added: [] });
     const created = await this.findBySlug(input.slug);
     if (!created) throw new Error("unreachable");
     return created;
@@ -100,6 +103,14 @@ export class InMemorySongRepository implements SongRepository {
   async deleteSong(songId: string): Promise<void> {
     const index = this.stored.findIndex((s) => s.id === songId);
     if (index >= 0) this.stored.splice(index, 1);
+  }
+
+  async addRecording(songId: string, recording: NewRecording): Promise<"added" | "duplicate"> {
+    const target = this.byId(songId);
+    const same = (r: NewRecording) => r.provider === recording.provider && r.externalId === recording.externalId;
+    if (target.song.recordings.some(same) || target.added.some(same)) return "duplicate";
+    target.added.push(recording);
+    return "added";
   }
 
   private byId(songId: string): StoredSong {

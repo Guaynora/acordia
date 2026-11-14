@@ -117,7 +117,18 @@
     "recordingLabels": {
       "title": "Recordings",
       "play": "Play “{title}”",
-      "untitled": "Recording"
+      "untitled": "Recording",
+      "add": {
+        "title": "Add a video or track",
+        "placeholder": "YouTube or Spotify link",
+        "submit": "Add",
+        "added": "Added.",
+        "login": "Sign in to add links.",
+        "invalid": "Paste a YouTube or Spotify link.",
+        "notFound": "We couldn't find that video or track: it may not exist or be private.",
+        "duplicate": "This song already has that link.",
+        "unexpected": "It could not be added. Try again."
+      }
     },
     "changes": {
       "tempo": "♩ = {bpm}",
@@ -214,7 +225,8 @@
       "forbidden": "Only the person who uploaded this version (or a moderator) can change it.",
       "original_has_versions": "This is the original version and the song has other versions, so it cannot be deleted.",
       "recording_not_found": "Could not find {detail}: the video does not exist or is private.",
-      "invalid_directive": "Check {detail}: the value is invalid or does not fit the meter."
+      "invalid_directive": "Check {detail}: the value is invalid or does not fit the meter.",
+      "duplicate_recording": "This song already has that link."
     },
     "tap": "Tap",
     "subtitle": "Paste chords the way you would copy them from another site. We check every chord and show how it looks before publishing.",
