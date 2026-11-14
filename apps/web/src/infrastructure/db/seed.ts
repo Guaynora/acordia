@@ -13,8 +13,8 @@ import { users } from "./schema";
 const SEED_EMAIL = "seed@acordia.invalid";
 
 async function seedUser(db: Database): Promise<Actor> {
-  await db.insert(users).values({ name: "Acordia", email: SEED_EMAIL }).onConflictDoNothing();
-  const [user] = await db.select({ id: users.id, name: users.name }).from(users).where(eq(users.email, SEED_EMAIL));
+  await db.insert(users).values({ name: "Acordia", handle: "acordia", email: SEED_EMAIL }).onConflictDoNothing();
+  const [user] = await db.select({ id: users.id, name: users.name, handle: users.handle }).from(users).where(eq(users.email, SEED_EMAIL));
   if (!user) throw new Error("Seed user could not be created");
   return user;
 }

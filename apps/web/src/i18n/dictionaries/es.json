@@ -12,7 +12,8 @@
     "uploadShort": "Subir",
     "signIn": "Entrar",
     "signOut": "Salir",
-    "account": "Tu cuenta"
+    "account": "Tu cuenta",
+    "profile": "Tu perfil"
   },
   "home": {
     "title": "Canciones",
@@ -174,5 +175,13 @@
     "privacy": "Solo usamos tu nombre, tu foto y tu email de Google. No publicamos nada en tu nombre.",
     "signedInAs": "Ya entraste como {name}.",
     "continue": "Continuar"
+  },
+  "profile": {
+    "joined": "En Acordia desde {date}",
+    "versionsOne": "1 versión publicada",
+    "versions": "{count} versiones publicadas",
+    "empty": "Todavía no ha publicado versiones.",
+    "versionsTitle": "Versiones",
+    "notFound": "No existe ese perfil."
   }
 }

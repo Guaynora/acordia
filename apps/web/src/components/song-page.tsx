@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Fragment } from "react";
 import type { Arrangement, Song } from "@/domain/song";
 import { tempoMarking } from "@/domain/tempo";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
-import { format } from "@/i18n/format";
 import { useCases } from "@/infrastructure/container";
 import { Metronome } from "./metronome";
 import { Recordings } from "./recordings";
@@ -93,9 +93,23 @@ function VersionPicker({
   current: Arrangement;
 }) {
   const base = `/${lang}/songs/${song.slug}`;
+  const author = current.authorHandle ? (
+    <Link href={`/${lang}/u/${current.authorHandle}`} className="font-semibold text-foreground hover:underline">
+      {current.authorName}
+    </Link>
+  ) : (
+    current.authorName
+  );
+  const [byBefore = "", byAfter = ""] = dict.song.versionBy.split("{author}");
   const details = [
     current.kind !== "original" ? dict.song.kinds[current.kind] : null,
-    current.authorName ? format(dict.song.versionBy, { author: current.authorName }) : null,
+    current.authorName ? (
+      <span key="author">
+        {byBefore}
+        {author}
+        {byAfter}
+      </span>
+    ) : null,
   ].filter(Boolean);
 
   return (
@@ -134,7 +148,16 @@ function VersionPicker({
       </div>
       {(details.length > 0 || current.description) && (
         <p className="text-sm text-muted">
-          {details.length > 0 && <span className="font-semibold text-foreground">{details.join(" · ")}</span>}
+          {details.length > 0 && (
+            <span className="font-semibold text-foreground">
+              {details.map((detail, i) => (
+                <Fragment key={i}>
+                  {i > 0 && " · "}
+                  {detail}
+                </Fragment>
+              ))}
+            </span>
+          )}
           {details.length > 0 && current.description ? " — " : ""}
           {current.description}
         </p>

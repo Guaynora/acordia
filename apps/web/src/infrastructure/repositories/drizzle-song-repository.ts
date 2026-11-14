@@ -39,7 +39,7 @@ export class DrizzleSongRepository implements SongRepository {
     if (!song) return null;
     const [songArrangements, songRecordings] = await Promise.all([
       this.db
-        .select({ arrangement: arrangements, authorDisplayName: users.name })
+        .select({ arrangement: arrangements, authorDisplayName: users.name, authorHandle: users.handle })
         .from(arrangements)
         .leftJoin(users, eq(users.id, arrangements.authorId))
         .where(eq(arrangements.songId, song.id))
@@ -54,7 +54,7 @@ export class DrizzleSongRepository implements SongRepository {
       originalKey: song.originalKey,
       tempo: song.tempo,
       timeSignature: song.timeSignature,
-      arrangements: songArrangements.map(({ arrangement: a, authorDisplayName }) => ({
+      arrangements: songArrangements.map(({ arrangement: a, authorDisplayName, authorHandle }) => ({
         id: a.id,
         slug: a.slug,
         name: a.name,
@@ -63,6 +63,7 @@ export class DrizzleSongRepository implements SongRepository {
         authorId: a.authorId,
         // The account's current name wins over the legacy free-text credit.
         authorName: authorDisplayName ?? a.authorName,
+        authorHandle,
         key: a.key,
         tempo: a.tempo,
         timeSignature: a.timeSignature,

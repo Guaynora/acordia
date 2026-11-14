@@ -17,6 +17,8 @@ export const userRole = pgEnum("user_role", ["user", "moderator", "admin"]);
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
+  /** Public alias for /u/[handle]; lowercase, set when the account is created. */
+  handle: text("handle").notNull().unique(),
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").notNull().default(false),
   image: text("image"),

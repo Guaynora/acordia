@@ -11,6 +11,7 @@ import { getAuth } from "./auth";
 export async function getCurrentUser(): Promise<User | null> {
   const session = await getAuth().api.getSession({ headers: await headers() });
   if (!session) return null;
-  const { id, name, image } = session.user;
-  return { id, name, image: image ?? null };
+  const { id, name, image, handle } = session.user;
+  // A session cached before handles existed may lack it for a few minutes.
+  return { id, handle: handle ?? "", name, image: image ?? null };
 }
