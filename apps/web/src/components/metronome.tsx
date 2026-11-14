@@ -272,10 +272,16 @@ export function Metronome({
     [clock, start, stop],
   );
 
+  // Release the audio device when the metronome goes away. Next.js may keep
+  // a page mounted but hidden and run this cleanup more than once, so drop
+  // the context once closed: closing it twice throws, and start() makes a
+  // new one when needed.
   useEffect(
     () => () => {
       stop();
-      void contextRef.current?.close();
+      const context = contextRef.current;
+      contextRef.current = null;
+      if (context && context.state !== "closed") void context.close();
     },
     [stop],
   );
