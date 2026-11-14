@@ -155,6 +155,38 @@ const AMAZING_GRACE_BARS = [
   "| [C] [D7] | [G] | |",
 ].join("\n");
 
+// A version that exercises the played order: an intro played twice, a verse
+// repeated with first and second endings, a bridge, and a D.S. al Coda that
+// goes back to the verse (now played once, taking the second ending) and
+// jumps to the coda. Played: Intro x2, Verse (1st ending), Verse (2nd ending),
+// Bridge, Verse (2nd ending), Coda.
+const AMAZING_GRACE_REPEATS = [
+  "{c: Intro x2}",
+  "| [G] [C] | [G] [D7] |",
+  "",
+  "{start_of_verse: Verse}",
+  "{x_segno}",
+  "|: A[G]mazing [G7]grace, how [C]sweet the [G]sound",
+  "That [G]saved a [Em]wretch like [D]me, [D7]",
+  "{x_ending: 1}",
+  "I [G]once was [G7]lost, but [C]now am [G]found,",
+  "Was [Em]blind, but [D]now I [G]see. [G] :|",
+  "{x_ending: 2}",
+  "How [G]precious [G7]did that [C]grace ap[G]pear",
+  "The [Em]hour I [D]first be[G]lieved. [G]",
+  "{x_to_coda}",
+  "{end_of_verse}",
+  "",
+  "{start_of_bridge: Bridge}",
+  "| [C] | [G] | [Am] | [D7] |",
+  "{x_ds_al_coda}",
+  "{end_of_bridge}",
+  "",
+  "{x_coda}",
+  "{c: Coda}",
+  "| [C] [D7] | [G] | |",
+].join("\n");
+
 interface SeedVersion {
   readonly songSlug: string;
   readonly slug: string;
@@ -183,6 +215,15 @@ const VERSIONS: readonly SeedVersion[] = [
     description: "Escrita con barras de compás: dos acordes por compás en la intro y el final, y compases que sostienen el acorde.",
     key: "G",
     source: AMAZING_GRACE_BARS,
+  },
+  {
+    songSlug: "amazing-grace-john-newton",
+    slug: "con-repeticiones",
+    name: "Con repeticiones",
+    kind: "other",
+    description: "Intro dos veces, estrofa con repetición y casillas 1.ª y 2.ª, puente y D.S. al Coda.",
+    key: "G",
+    source: AMAZING_GRACE_REPEATS,
   },
 ];
 
