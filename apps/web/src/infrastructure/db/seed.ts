@@ -1,5 +1,5 @@
 /**
- * Seeds a public-domain song through the real use case, so the importer and
+ * Seeds public-domain songs through the real use case, so the importer and
  * validation run exactly as they do for user uploads.
  */
 import { eq } from "drizzle-orm";
@@ -48,23 +48,69 @@ const CIELITO_LINDO = [
   "cielito lindo, los corazones.",
 ].join("\n");
 
-async function main() {
-  const db = getDb();
-  const repository = new DrizzleSongRepository(db);
-  if (await repository.slugExists("cielito-lindo-tradicional")) {
-    console.log("Seed already applied.");
-    return;
-  }
-  const result = await new PublishSong(repository, new OEmbedRecordingInfo()).execute({
+// "Amazing Grace": words by John Newton (1779), last verse first printed in
+// 1829, sung to "New Britain" (1829). All in the public domain. Written with
+// exactly one chord per bar (3/4), so auto-scroll at tempo follows the music.
+const AMAZING_GRACE = [
+  "{c: Intro}",
+  "[G] [C] [G] [D7]",
+  "",
+  ...[
+    ["A[G]mazing [G7]grace, how [C]sweet the [G]sound", "That [G]saved a [Em]wretch like [D]me, [D7]", "I [G]once was [G7]lost, but [C]now am [G]found,", "Was [Em]blind, but [D]now I [G]see. [G]"],
+    ["'Twas [G]grace that [G7]taught my [C]heart to [G]fear,", "And [G]grace my [Em]fears re[D]lieved; [D7]", "How [G]precious [G7]did that [C]grace ap[G]pear", "The [Em]hour I [D]first be[G]lieved. [G]"],
+    ["Through [G]many [G7]dangers, [C]toils and [G]snares,", "I [G]have al[Em]ready [D]come; [D7]", "'Tis [G]grace hath [G7]brought me [C]safe thus [G]far,", "And [Em]grace will [D]lead me [G]home. [G]"],
+    ["The [G]Lord has [G7]promised [C]good to [G]me,", "His [G]word my [Em]hope se[D]cures; [D7]", "He [G]will my [G7]shield and [C]portion [G]be,", "As [Em]long as [D]life en[G]dures. [G]"],
+    ["Yea, [G]when this [G7]flesh and [C]heart shall [G]fail,", "And [G]mortal [Em]life shall [D]cease, [D7]", "I [G]shall pos[G7]sess, with[C]in the [G]veil,", "A [Em]life of [D]joy and [G]peace. [G]"],
+    ["When [G]we've been [G7]there ten [C]thousand [G]years,", "Bright [G]shining [Em]as the [D]sun, [D7]", "We've [G]no less [G7]days to [C]sing God's [G]praise", "Than [Em]when we'd [D]first be[G]gun. [G]"],
+  ].flatMap((lines, i) => [`{start_of_verse: Verse ${i + 1}}`, ...lines, "{end_of_verse}", ""]),
+  "{c: Outro}",
+  "[C] [G] [D7] [G]",
+].join("\n");
+
+interface SeedSong {
+  readonly slug: string;
+  readonly title: string;
+  readonly artist: string;
+  readonly key: string;
+  readonly tempo: string;
+  readonly timeSignature: string;
+  readonly source: string;
+}
+
+const SONGS: readonly SeedSong[] = [
+  {
+    slug: "cielito-lindo-tradicional",
     title: "Cielito lindo",
     artist: "Tradicional",
     key: "C",
     tempo: "120",
     timeSignature: "3/4",
     source: CIELITO_LINDO,
-    recordingUrls: [],
-  }, await seedUser(db));
-  console.log(result);
+  },
+  {
+    slug: "amazing-grace-john-newton",
+    title: "Amazing Grace",
+    artist: "John Newton",
+    key: "G",
+    tempo: "80",
+    timeSignature: "3/4",
+    source: AMAZING_GRACE,
+  },
+];
+
+/** Publishes each song that is not there yet, so new seeds apply to old databases. */
+async function main() {
+  const db = getDb();
+  const repository = new DrizzleSongRepository(db);
+  const publish = new PublishSong(repository, new OEmbedRecordingInfo());
+  const actor = await seedUser(db);
+  for (const { slug, ...song } of SONGS) {
+    if (await repository.slugExists(slug)) {
+      console.log(`${slug}: already seeded.`);
+      continue;
+    }
+    console.log(slug, await publish.execute({ ...song, recordingUrls: [] }, actor));
+  }
 }
 
 main()
