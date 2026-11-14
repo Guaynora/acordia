@@ -13,7 +13,8 @@
     "signIn": "Sign in",
     "signOut": "Sign out",
     "account": "Your account",
-    "profile": "Your profile"
+    "profile": "Your profile",
+    "favorites": "Favorites"
   },
   "home": {
     "title": "Songs",
@@ -194,5 +195,14 @@
     "empty": "No published versions yet.",
     "versionsTitle": "Versions",
     "notFound": "That profile does not exist."
+  },
+  "favorites": {
+    "title": "Your favorites",
+    "subtitle": "Versions you saved to practice. Only you can see them.",
+    "empty": "You have not saved any version yet. Press “Save” on a version page to keep it here.",
+    "save": "Save",
+    "saved": "Saved",
+    "saveHint": "Save to your favorites",
+    "unsaveHint": "Remove from your favorites"
   }
 }

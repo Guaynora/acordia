@@ -3,6 +3,7 @@ import { Epilogue, Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { InlineScript } from "@/components/inline-script";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { THEME_SCRIPT } from "@/components/theme-script";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -43,7 +44,7 @@ export default async function RootLayout({ children, params }: LayoutProps<"/[la
       suppressHydrationWarning
     >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+        <InlineScript html={THEME_SCRIPT} />
       </head>
       <body className="flex min-h-full flex-col">
         <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur">

@@ -9,6 +9,7 @@ import { useCases } from "@/infrastructure/container";
 import { Metronome } from "./metronome";
 import { Recordings } from "./recordings";
 import { SongView } from "./song-view";
+import { FavoriteButton } from "./favorite-button";
 import { VersionActions } from "./version-actions";
 
 /**
@@ -163,9 +164,14 @@ function VersionPicker({
           {current.description}
         </p>
       )}
-      <Suspense fallback={null}>
-        <VersionActions lang={lang} dict={dict} song={song} current={current} />
-      </Suspense>
+      <div className="flex flex-wrap items-center gap-2">
+        <Suspense fallback={null}>
+          <FavoriteButton lang={lang} dict={dict} song={song} current={current} />
+        </Suspense>
+        <Suspense fallback={null}>
+          <VersionActions lang={lang} dict={dict} song={song} current={current} />
+        </Suspense>
+      </div>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 "use server";
 
+import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import type { FormState } from "@/components/upload-form";
 import { hasLocale } from "@/i18n/config";
@@ -63,4 +64,17 @@ export async function deleteVersionAction(lang: string, songSlug: string, arrang
   // the page was stale or the request was forged: go back to the song.
   if (!result.ok) redirect(`/${locale}/songs/${songSlug}`);
   redirect(result.songDeleted ? `/${locale}` : `/${locale}/songs/${result.songSlug}`);
+}
+
+export async function setFavoriteAction(
+  lang: string,
+  songSlug: string,
+  arrangementSlug: string,
+  favorite: boolean,
+): Promise<void> {
+  const locale = hasLocale(lang) ? lang : "es";
+  const user = await getCurrentUser();
+  if (!user) redirect(loginPath(locale, `/${locale}/songs/${songSlug}/${arrangementSlug}`));
+  await useCases.setFavorite().execute({ songSlug, arrangementSlug }, favorite, user);
+  refresh();
 }
