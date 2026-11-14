@@ -1,5 +1,7 @@
 import "server-only";
 import { AddArrangement } from "@/application/add-arrangement";
+import { DeleteArrangement } from "@/application/delete-arrangement";
+import { EditArrangement } from "@/application/edit-arrangement";
 import { GetProfile } from "@/application/get-profile";
 import { PublishSong } from "@/application/publish-song";
 import { GetSong, SearchSongs } from "@/application/queries";
@@ -22,6 +24,8 @@ function userRepository() {
 export const useCases = {
   publishSong: () => new PublishSong(songRepository()),
   addArrangement: () => new AddArrangement(songRepository()),
+  editArrangement: () => new EditArrangement(songRepository()),
+  deleteArrangement: () => new DeleteArrangement(songRepository()),
   searchSongs: () => new SearchSongs(songRepository()),
   getSong: () => new GetSong(songRepository()),
   getProfile: () => new GetProfile(userRepository()),

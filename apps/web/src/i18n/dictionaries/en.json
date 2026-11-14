@@ -80,7 +80,13 @@
       "acoustic": "Acoustic",
       "piano": "Piano",
       "other": "Other"
-    }
+    },
+    "editVersion": "Edit",
+    "deleteVersion": "Delete",
+    "deleteConfirm": "Delete this version? This cannot be undone.",
+    "deleteSongConfirm": "This is the only version, so the whole song will be deleted. This cannot be undone.",
+    "deleteYes": "Yes, delete",
+    "cannotDeleteOriginal": "The original version cannot be deleted while the song has other versions."
   },
   "metronome": {
     "title": "Metronome",
@@ -127,7 +133,9 @@
       "invalid_recording_url": "Invalid link: {detail}",
       "unexpected": "We couldn't publish the song. Please try again.",
       "not_found": "This song no longer exists.",
-      "invalid_kind": "Invalid version type."
+      "invalid_kind": "Invalid version type.",
+      "forbidden": "Only the person who uploaded this version (or a moderator) can change it.",
+      "original_has_versions": "This is the original version and the song has other versions, so it cannot be deleted."
     },
     "tap": "Tap",
     "subtitle": "Paste chords the way you would copy them from another site. We check every chord and show how it looks before publishing.",
@@ -154,7 +162,10 @@
     "sameAsSong": "Same ({value})",
     "tempoInheritHelp": "Leave it empty to use the song's ({bpm} BPM).",
     "submitVersion": "Publish version",
-    "publishingAs": "Published under the name {name}."
+    "publishingAs": "Published under the name {name}.",
+    "saveChanges": "Save changes",
+    "editTitle": "Edit “{name}”",
+    "editSubtitle": "{title} · changes show on the version page right away."
   },
   "notFound": {
     "title": "We couldn't find that page",

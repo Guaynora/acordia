@@ -1,8 +1,9 @@
 import { slugify } from "@/domain/slug";
-import { ARRANGEMENT_KINDS, type ArrangementKind, RESERVED_ARRANGEMENT_SLUGS } from "@/domain/song";
+import { RESERVED_ARRANGEMENT_SLUGS } from "@/domain/song";
 import type { SongRepository } from "@/domain/song-repository";
 import type { Actor } from "@/domain/user";
 import { type InputError, optionalText, validateMusic } from "./song-input";
+import { meterOverrides, validateVersionDetails } from "./version-input";
 
 export interface AddArrangementInput {
   readonly songSlug: string;
@@ -29,14 +30,8 @@ export class AddArrangement {
     const song = await this.songs.findBySlug(input.songSlug);
     if (!song) return { ok: false, errors: [{ field: "song", code: "not_found" }] };
 
-    const errors: InputError[] = [];
-    const name = input.name.trim().slice(0, 60);
-    if (!name) errors.push({ field: "name", code: "required" });
-
-    const kind = input.kind as ArrangementKind;
-    if (!(ARRANGEMENT_KINDS as readonly string[]).includes(kind)) {
-      errors.push({ field: "kind", code: "invalid_kind" });
-    }
+    const { errors: detailErrors, name, kind } = validateVersionDetails(input);
+    const errors: InputError[] = [...detailErrors];
 
     const { errors: musicErrors, music } = validateMusic(input, { optionalMeter: true });
     errors.push(...musicErrors);
@@ -54,10 +49,7 @@ export class AddArrangement {
       description: optionalText(input.description, 280),
       authorId: actor.id,
       key: music.key,
-      // Store an override only when it differs from the song.
-      tempo: music.tempo !== null && music.tempo !== song.tempo ? music.tempo : null,
-      timeSignature:
-        music.timeSignature !== null && music.timeSignature !== song.timeSignature ? music.timeSignature : null,
+      ...meterOverrides(music, song),
       chordpro: music.chordpro,
     });
     return { ok: true, songSlug: song.slug, arrangementSlug: slug };

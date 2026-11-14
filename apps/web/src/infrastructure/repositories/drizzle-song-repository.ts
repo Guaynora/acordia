@@ -1,6 +1,12 @@
 import { asc, desc, eq, sql } from "drizzle-orm";
 import type { Song, SongSummary } from "@/domain/song";
-import type { NewArrangement, NewSong, SongRepository } from "@/domain/song-repository";
+import type {
+  ArrangementChanges,
+  NewArrangement,
+  NewSong,
+  SongMusicChanges,
+  SongRepository,
+} from "@/domain/song-repository";
 import type { Database } from "../db/client";
 import { arrangements, recordings, songs, users } from "../db/schema";
 
@@ -43,7 +49,9 @@ export class DrizzleSongRepository implements SongRepository {
         .from(arrangements)
         .leftJoin(users, eq(users.id, arrangements.authorId))
         .where(eq(arrangements.songId, song.id))
-        .orderBy(asc(arrangements.createdAt)),
+        // The first version is the song's reference; on a timestamp tie
+        // (rows written in one transaction) the original still comes first.
+        .orderBy(asc(arrangements.createdAt), sql`${arrangements.kind} <> 'original'`, asc(arrangements.slug)),
       this.db.select().from(recordings).where(eq(recordings.songId, song.id)).orderBy(asc(recordings.createdAt)),
     ]);
     return {
@@ -112,5 +120,25 @@ export class DrizzleSongRepository implements SongRepository {
 
   async addArrangement(songId: string, arrangement: NewArrangement): Promise<void> {
     await this.db.insert(arrangements).values({ songId, ...arrangement });
+  }
+
+  async updateArrangement(
+    arrangementId: string,
+    changes: ArrangementChanges,
+    song: { id: string; changes: SongMusicChanges } | null,
+  ): Promise<void> {
+    await this.db.transaction(async (tx) => {
+      await tx.update(arrangements).set(changes).where(eq(arrangements.id, arrangementId));
+      if (song) await tx.update(songs).set(song.changes).where(eq(songs.id, song.id));
+    });
+  }
+
+  async deleteArrangement(arrangementId: string): Promise<void> {
+    await this.db.delete(arrangements).where(eq(arrangements.id, arrangementId));
+  }
+
+  async deleteSong(songId: string): Promise<void> {
+    // Versions and recordings go with it (ON DELETE CASCADE).
+    await this.db.delete(songs).where(eq(songs.id, songId));
   }
 }

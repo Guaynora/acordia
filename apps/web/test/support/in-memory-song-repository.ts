@@ -1,46 +1,107 @@
 import type { Arrangement, Song, SongSummary } from "@/domain/song";
-import type { NewArrangement, NewSong, SongRepository } from "@/domain/song-repository";
+import type {
+  ArrangementChanges,
+  NewArrangement,
+  NewSong,
+  SongMusicChanges,
+  SongRepository,
+} from "@/domain/song-repository";
 
-/** The fields a stored song exposes, without the owner (not part of the read model). */
-function summaryFields(song: NewSong) {
-  const { slug, title, artist, originalKey, tempo, timeSignature } = song;
-  return { slug, title, artist, originalKey, tempo, timeSignature };
+interface StoredSong {
+  id: string;
+  song: Omit<NewSong, "arrangement">;
+  arrangements: (NewArrangement & { id: string })[];
 }
 
 /** In-memory adapter: use cases run in tests without a database. */
 export class InMemorySongRepository implements SongRepository {
-  readonly songs: NewSong[] = [];
-  readonly extraArrangements = new Map<string, NewArrangement[]>();
+  private readonly stored: StoredSong[] = [];
+  private nextId = 1;
+
+  /** Songs as they were created, for assertions. */
+  get songs(): (NewSong & { arrangements: NewArrangement[] })[] {
+    return this.stored.map((s) => ({ ...s.song, arrangement: s.arrangements[0]!, arrangements: s.arrangements }));
+  }
 
   async search(): Promise<SongSummary[]> {
-    return this.songs.map((s) => ({ ...summaryFields(s), arrangementCount: 1 + (this.extraArrangements.get(s.slug)?.length ?? 0) }));
+    return this.stored.map(({ song: s, arrangements }) => ({
+      slug: s.slug,
+      title: s.title,
+      artist: s.artist,
+      originalKey: s.originalKey,
+      tempo: s.tempo,
+      timeSignature: s.timeSignature,
+      arrangementCount: arrangements.length,
+    }));
   }
 
   async findBySlug(slug: string): Promise<Song | null> {
-    const song = this.songs.find((s) => s.slug === slug);
-    if (!song) return null;
-    const all = [song.arrangement, ...(this.extraArrangements.get(slug) ?? [])];
+    const found = this.stored.find((s) => s.song.slug === slug);
+    if (!found) return null;
+    const { song: s } = found;
     return {
-      ...summaryFields(song),
-      id: slug,
-      arrangements: all.map((a, i): Arrangement => ({ ...a, id: String(i), authorName: null, authorHandle: null, createdAt: new Date(i) })),
-      recordings: song.recordings.map((r, i) => ({ id: String(i), ...r, key: null })),
+      id: found.id,
+      slug: s.slug,
+      title: s.title,
+      artist: s.artist,
+      originalKey: s.originalKey,
+      tempo: s.tempo,
+      timeSignature: s.timeSignature,
+      arrangements: found.arrangements.map(
+        (a, i): Arrangement => ({ ...a, authorName: null, authorHandle: null, createdAt: new Date(i) }),
+      ),
+      recordings: s.recordings.map((r, i) => ({ id: String(i), ...r, key: null })),
     };
   }
 
   async slugExists(slug: string): Promise<boolean> {
-    return this.songs.some((s) => s.slug === slug);
+    return this.stored.some((s) => s.song.slug === slug);
   }
 
-  async create(song: NewSong): Promise<Song> {
-    this.songs.push(song);
-    const created = await this.findBySlug(song.slug);
+  async create(input: NewSong): Promise<Song> {
+    const { arrangement, ...song } = input;
+    this.stored.push({ id: this.id(), song, arrangements: [{ ...arrangement, id: this.id() }] });
+    const created = await this.findBySlug(input.slug);
     if (!created) throw new Error("unreachable");
     return created;
   }
 
   async addArrangement(songId: string, arrangement: NewArrangement): Promise<void> {
-    // findBySlug uses the slug as id.
-    this.extraArrangements.set(songId, [...(this.extraArrangements.get(songId) ?? []), arrangement]);
+    this.byId(songId).arrangements.push({ ...arrangement, id: this.id() });
+  }
+
+  async updateArrangement(
+    arrangementId: string,
+    changes: ArrangementChanges,
+    song: { id: string; changes: SongMusicChanges } | null,
+  ): Promise<void> {
+    for (const s of this.stored) {
+      const index = s.arrangements.findIndex((a) => a.id === arrangementId);
+      const current = s.arrangements[index];
+      if (current) s.arrangements[index] = { ...current, ...changes };
+    }
+    if (song) {
+      const target = this.byId(song.id);
+      target.song = { ...target.song, ...song.changes };
+    }
+  }
+
+  async deleteArrangement(arrangementId: string): Promise<void> {
+    for (const s of this.stored) s.arrangements = s.arrangements.filter((a) => a.id !== arrangementId);
+  }
+
+  async deleteSong(songId: string): Promise<void> {
+    const index = this.stored.findIndex((s) => s.id === songId);
+    if (index >= 0) this.stored.splice(index, 1);
+  }
+
+  private byId(songId: string): StoredSong {
+    const found = this.stored.find((s) => s.id === songId);
+    if (!found) throw new Error(`No song ${songId}`);
+    return found;
+  }
+
+  private id(): string {
+    return String(this.nextId++);
   }
 }
