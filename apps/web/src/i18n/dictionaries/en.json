@@ -118,6 +118,11 @@
       "title": "Recordings",
       "play": "Play “{title}”",
       "untitled": "Recording"
+    },
+    "changes": {
+      "tempo": "♩ = {bpm}",
+      "ramp": "{from} → {to} BPM over {bars} bars",
+      "key": "Key: {key}"
     }
   },
   "metronome": {
@@ -154,7 +159,10 @@
     "mute": "Mute",
     "unmute": "Unmute",
     "silentHint": "Sound off: follow the pulse on screen.",
-    "countInOne": "1 bar"
+    "countInOne": "1 bar",
+    "followingSong": "Following the song's changes",
+    "now": "Now: {bpm} BPM · {signature}",
+    "next": "Next bar: {signature} · {bpm} BPM"
   },
   "upload": {
     "title": "Upload song",
@@ -187,7 +195,8 @@
       "invalid_kind": "Invalid version type.",
       "forbidden": "Only the person who uploaded this version (or a moderator) can change it.",
       "original_has_versions": "This is the original version and the song has other versions, so it cannot be deleted.",
-      "recording_not_found": "Could not find {detail}: the video does not exist or is private."
+      "recording_not_found": "Could not find {detail}: the video does not exist or is private.",
+      "invalid_directive": "Check {detail}: the value is invalid or does not fit the meter."
     },
     "tap": "Tap",
     "subtitle": "Paste chords the way you would copy them from another site. We check every chord and show how it looks before publishing.",

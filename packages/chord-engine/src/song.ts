@@ -3,6 +3,8 @@
  * metadata from directives, and lines split into chord/lyric segments.
  */
 
+import { CHANGE_DIRECTIVES, type ChangeDirective } from "./tempo-directives";
+
 export interface Segment {
   /** Chord placed above the start of `text`, or null for leading lyrics. */
   readonly chord: string | null;
@@ -14,6 +16,8 @@ export type SongLine =
   | { readonly kind: "comment"; readonly text: string }
   | { readonly kind: "section-start"; readonly section: string; readonly label: string | null }
   | { readonly kind: "section-end"; readonly section: string }
+  /** A tempo, meter, key, grouping or ramp directive, raw as written. */
+  | { readonly kind: "change"; readonly directive: ChangeDirective; readonly value: string }
   | { readonly kind: "empty" };
 
 export interface ParsedSong {
@@ -63,6 +67,12 @@ function parseDirective(name: string, value: string | null, metadata: Record<str
   }
   if (directive.startsWith("end_of_")) {
     return { kind: "section-end", section: directive.slice("end_of_".length) };
+  }
+  if (CHANGE_DIRECTIVES.has(directive)) {
+    // Metadata keeps the first value (the starting one); the line marks
+    // where each one applies.
+    if (value !== null && !(directive in metadata)) metadata[directive] = value;
+    return { kind: "change", directive: directive as ChangeDirective, value: value ?? "" };
   }
   if (value !== null) metadata[directive] = value;
   return null;

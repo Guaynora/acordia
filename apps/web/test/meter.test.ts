@@ -61,3 +61,23 @@ describe("subdivisions", () => {
     expect(countInClicks(meterFor("3/4"), 0)).toBe(0);
   });
 });
+
+describe("meters from song directives", () => {
+  it("regroups the accents of an odd meter", () => {
+    expect(meterFor("7/8", [3, 2, 2]).accents).toEqual([0, 2, 2, 1, 2, 1, 2]);
+    expect(meterFor("7/8", [3, 2, 2]).groups).toEqual([3, 2, 2]);
+  });
+
+  it("ignores groups that do not fill the bar", () => {
+    expect(meterFor("7/8", [2, 2]).accents).toEqual(meterFor("7/8").accents);
+  });
+
+  it("builds meters the picker does not list", () => {
+    const nine = meterFor("9/8");
+    expect(nine.kind).toBe("compound");
+    expect(nine.accents).toEqual([0, 2, 2, 1, 2, 2, 1, 2, 2]);
+    expect(meterFor("11/8").accents).toEqual([0, 2, 1, 2, 1, 2, 1, 2, 1, 2, 2]);
+    expect(meterFor("3/8").accents).toEqual([0, 2, 2]);
+    expect(meterFor("6/4").accents).toEqual([0, 2, 2, 2, 2, 2]);
+  });
+});

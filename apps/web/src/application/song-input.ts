@@ -1,4 +1,11 @@
-import { formatKey, importChordsOverLyrics, parseChord, parseKey, validateChordPro } from "@acordia/chord-engine";
+import {
+  formatKey,
+  importChordsOverLyrics,
+  parseChord,
+  parseKey,
+  validateChordPro,
+  validateTempoDirectives,
+} from "@acordia/chord-engine";
 import { MAX_TEMPO, MIN_TEMPO, TIME_SIGNATURES } from "@/domain/song";
 
 /**
@@ -28,6 +35,7 @@ export type InputErrorCode =
   | "invalid_tempo"
   | "invalid_time_signature"
   | "unknown_chord"
+  | "invalid_directive"
   | "invalid_recording_url"
   | "recording_not_found";
 
@@ -117,6 +125,12 @@ export function validateMusic(
   const prepared = source && key ? prepareSource(source, keyText) : null;
   for (const chordError of prepared?.errors ?? []) {
     errors.push({ field: "source", code: "unknown_chord", detail: `${chordError.symbol} (${chordError.line})` });
+  }
+  // Tempo, meter, key, grouping and ramp changes inside the sheet.
+  const limits = { minBpm: MIN_TEMPO, maxBpm: MAX_TEMPO, initialTime: timeSignature ?? "4/4" };
+  for (const problem of prepared ? validateTempoDirectives(prepared.chordpro, limits) : []) {
+    const directive = `{${problem.directive}: ${problem.value}}`;
+    errors.push({ field: "source", code: "invalid_directive", detail: `${directive} (${problem.line})` });
   }
 
   if (errors.length > 0 || !key || !prepared || tempo === undefined) return { errors, music: null };

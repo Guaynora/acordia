@@ -19,6 +19,8 @@ export interface Meter {
   readonly accents: readonly Accent[];
   /** Clicks per counted beat (3 in compound meters). */
   readonly clicksPerBeat: number;
+  /** Accent grouping the author asked for (2+2+3), when not the default. */
+  readonly groups?: readonly number[];
 }
 
 export const METERS: readonly Meter[] = [
@@ -34,8 +36,44 @@ export const METERS: readonly Meter[] = [
 
 export const TIME_SIGNATURES = METERS.map((m) => m.signature);
 
-export function meterFor(signature: string): Meter {
-  return METERS.find((m) => m.signature === signature) ?? (METERS[2] as Meter);
+/** "7/8", or "7/8 (3+2+2)" when regrouped. */
+export function meterName(meter: Meter): string {
+  return meter.groups ? `${meter.signature} (${meter.groups.join("+")})` : meter.signature;
+}
+
+/** Accents of one bar from its groups: downbeat, then a secondary accent on each group. */
+function accentsFromGroups(groups: readonly number[]): Accent[] {
+  return groups.flatMap((size, g) => Array.from({ length: size }, (_, i): Accent => (i > 0 ? 2 : g === 0 ? 0 : 1)));
+}
+
+/**
+ * A meter a song may switch to that the picker does not list, such as 9/8
+ * or 3/8: N/8 with N a multiple of 3 (from 6) is compound; other N/8 count
+ * eighths in groups of two ending in a three; N/4 and N/2 count each beat.
+ */
+function meterFromSignature(signature: string): Meter | null {
+  const match = /^(\d{1,2})\/(2|4|8)$/.exec(signature);
+  const beats = Number(match?.[1]);
+  const unit = Number(match?.[2]);
+  if (!match || beats < 1) return null;
+  if (unit === 8 && beats >= 6 && beats % 3 === 0) {
+    return { signature, kind: "compound", accents: accentsFromGroups(Array(beats / 3).fill(3)), clicksPerBeat: 3 };
+  }
+  if (unit === 8 && beats >= 5) {
+    const groups = [...Array(Math.floor(beats / 2) - (beats % 2)).fill(2), ...(beats % 2 ? [3] : [])];
+    return { signature, kind: "odd", accents: accentsFromGroups(groups), clicksPerBeat: 1 };
+  }
+  return { signature, kind: "simple", accents: [0, ...Array(beats - 1).fill(2)], clicksPerBeat: 1 };
+}
+
+/**
+ * The meter for a signature, optionally regrouped (7/8 as 3+2+2). Unknown
+ * signatures fall back to 4/4; groups that do not fill the bar are ignored.
+ */
+export function meterFor(signature: string, groups?: readonly number[] | null): Meter {
+  const base = METERS.find((m) => m.signature === signature) ?? meterFromSignature(signature) ?? (METERS[2] as Meter);
+  if (!groups || groups.reduce((a, b) => a + b, 0) !== base.accents.length) return base;
+  return { ...base, accents: accentsFromGroups(groups), groups };
 }
 
 /** Seconds between two clicks at the given tempo. */

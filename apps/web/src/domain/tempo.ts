@@ -1,3 +1,6 @@
+/** Tempo the metronome starts at when a song gives none. */
+export const DEFAULT_PRACTICE_BPM = 90;
+
 /**
  * Classic tempo markings by BPM. The ranges overlap in practice; these are
  * the commonly cited boundaries, good enough to describe a song's feel.
