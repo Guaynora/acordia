@@ -21,6 +21,8 @@ export type InputField =
 export type InputErrorCode =
   | "required"
   | "not_found"
+  | "forbidden"
+  | "original_has_versions"
   | "invalid_kind"
   | "invalid_key"
   | "invalid_tempo"

@@ -26,6 +26,16 @@ export interface NewSong {
   readonly recordings: readonly RecordingReference[];
 }
 
+/** Fields of a version that an edit can change; its slug and author never change. */
+export type ArrangementChanges = Omit<NewArrangement, "slug" | "authorId">;
+
+/** Song-level music, edited together with the song's first version. */
+export interface SongMusicChanges {
+  readonly originalKey: string;
+  readonly tempo: number | null;
+  readonly timeSignature: string;
+}
+
 /** Port implemented by the infrastructure layer. */
 export interface SongRepository {
   search(query: string, limit: number): Promise<SongSummary[]>;
@@ -33,4 +43,9 @@ export interface SongRepository {
   slugExists(slug: string): Promise<boolean>;
   create(song: NewSong): Promise<Song>;
   addArrangement(songId: string, arrangement: NewArrangement): Promise<void>;
+  /** Saves both in one transaction; `song` is null when only the version changes. */
+  updateArrangement(arrangementId: string, changes: ArrangementChanges, song: { id: string; changes: SongMusicChanges } | null): Promise<void>;
+  deleteArrangement(arrangementId: string): Promise<void>;
+  /** Deletes the song with its versions and recordings. */
+  deleteSong(songId: string): Promise<void>;
 }

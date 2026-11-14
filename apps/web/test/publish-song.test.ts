@@ -3,7 +3,7 @@ import { PublishSong } from "@/application/publish-song";
 import { looksLikeChordPro } from "@/application/song-input";
 import { InMemorySongRepository } from "./support/in-memory-song-repository";
 
-const ACTOR = { id: "user-1", name: "Ana" };
+const ACTOR = { id: "user-1", name: "Ana", role: "user" } as const;
 
 const VALID = {
   title: "Canción de prueba",

@@ -18,18 +18,32 @@ export interface FormState {
 
 type Action = (state: FormState, form: FormData) => Promise<FormState>;
 
-/** Uploading a new song, or a new version of an existing one. */
+interface SongContext {
+  readonly title: string;
+  readonly artist: string;
+  readonly tempo: number | null;
+  readonly timeSignature: string;
+}
+
+/**
+ * Uploading a new song, a new version of an existing one, or editing a
+ * version. `main` is the song's first version: it has no name or kind of its
+ * own and sets the song's tempo and meter.
+ */
 export type FormMode =
   | { readonly kind: "song" }
-  | {
-      readonly kind: "version";
-      readonly song: {
-        readonly title: string;
-        readonly artist: string;
-        readonly tempo: number | null;
-        readonly timeSignature: string;
-      };
-    };
+  | { readonly kind: "version"; readonly song: SongContext }
+  | { readonly kind: "edit"; readonly main: boolean; readonly song: SongContext };
+
+export interface FormValues {
+  readonly name: string;
+  readonly kind: string;
+  readonly description: string;
+  readonly key: string;
+  readonly tempo: string;
+  readonly timeSignature: string;
+  readonly source: string;
+}
 
 const INITIAL: FormState = { errors: [], unexpected: false };
 
@@ -57,6 +71,7 @@ export function UploadForm({
   song: songLabels,
   markings,
   publisher,
+  initial,
 }: {
   action: Action;
   mode: FormMode;
@@ -65,8 +80,14 @@ export function UploadForm({
   markings: Dictionary["tempoMarkings"];
   /** Display name of the signed-in user the version will be credited to. */
   publisher: string;
+  /** Current values when editing. */
+  initial?: FormValues;
 }) {
-  const isVersion = mode.kind === "version";
+  const editing = mode.kind === "edit";
+  // Name, kind and description, and tempo/meter that may inherit the song's.
+  const isVersion = mode.kind === "version" || (mode.kind === "edit" && !mode.main);
+  const context = mode.kind === "song" ? null : mode.song;
+  const inherited = isVersion ? context : null;
   const [state, formAction, pending] = useActionState(action, INITIAL);
   const [tab, setTab] = useState<"edit" | "preview">("edit");
   // Controlled fields so values survive a failed submission.
@@ -82,6 +103,7 @@ export function UploadForm({
     timeSignature: isVersion ? "" : "4/4",
     source: "",
     recordings: "",
+    ...initial,
   });
   const set = (name: keyof typeof fields) => (event: { target: { value: string } }) =>
     setFields((f) => ({ ...f, [name]: event.target.value }));
@@ -124,8 +146,8 @@ export function UploadForm({
   // Tempo and meter shown in the preview fall back to the song's in a version.
   const typedTempo = Number(fields.tempo);
   const tempo =
-    typedTempo >= 30 && typedTempo <= 300 ? typedTempo : isVersion ? mode.song.tempo : null;
-  const timeSignature = fields.timeSignature || (isVersion ? mode.song.timeSignature : "4/4");
+    typedTempo >= 30 && typedTempo <= 300 ? typedTempo : (inherited?.tempo ?? null);
+  const timeSignature = fields.timeSignature || (inherited?.timeSignature ?? "4/4");
 
   const tabButton = (value: "edit" | "preview", text: string) => (
     <button type="button" aria-pressed={tab === value} onClick={() => setTab(value)} className="segmented-item flex-1">
@@ -177,7 +199,7 @@ export function UploadForm({
                 />
               </Field>
             </>
-          ) : (
+          ) : mode.kind === "song" ? (
             <div className="grid gap-5 sm:grid-cols-2">
               <Field label={labels.titleLabel} required errors={errorsFor("title")}>
                 <input name="title" required value={fields.title} onChange={set("title")} className="input" />
@@ -186,7 +208,7 @@ export function UploadForm({
                 <input name="artist" required value={fields.artist} onChange={set("artist")} className="input" />
               </Field>
             </div>
-          )}
+          ) : null}
 
           <div className="grid gap-5 sm:grid-cols-[1fr_1.3fr_1fr]">
             <Field label={labels.keyLabel} required help={labels.keyHelp} errors={errorsFor("key")}>
@@ -205,8 +227,8 @@ export function UploadForm({
               help={
                 typedTempo >= 30 && typedTempo <= 300
                   ? markings[tempoMarking(typedTempo)]
-                  : isVersion && mode.song.tempo !== null
-                    ? format(labels.tempoInheritHelp, { bpm: mode.song.tempo })
+                  : inherited && inherited.tempo !== null
+                    ? format(labels.tempoInheritHelp, { bpm: inherited.tempo })
                     : labels.tempoHelp
               }
               errors={errorsFor("tempo")}
@@ -218,7 +240,7 @@ export function UploadForm({
                   inputMode="numeric"
                   value={fields.tempo}
                   onChange={set("tempo")}
-                  placeholder={isVersion && mode.song.tempo !== null ? String(mode.song.tempo) : undefined}
+                  placeholder={inherited && inherited.tempo !== null ? String(inherited.tempo) : undefined}
                   className="input font-mono text-lg"
                 />
                 <button type="button" className="btn-secondary min-h-12 px-3 font-mono text-xs" onClick={tap}>
@@ -233,9 +255,7 @@ export function UploadForm({
                 onChange={set("timeSignature")}
                 className="input font-mono"
               >
-                {isVersion && (
-                  <option value="">{format(labels.sameAsSong, { value: mode.song.timeSignature })}</option>
-                )}
+                {inherited && <option value="">{format(labels.sameAsSong, { value: inherited.timeSignature })}</option>}
                 {TIME_SIGNATURES.map((ts) => (
                   <option key={ts}>{ts}</option>
                 ))}
@@ -293,7 +313,7 @@ export function UploadForm({
             </section>
           )}
 
-          {!isVersion && (
+          {mode.kind === "song" && (
             <Field label={labels.recordingsLabel} help={labels.recordingsHelp} errors={errorsFor("recordings")}>
               <textarea
                 name="recordings"
@@ -306,7 +326,7 @@ export function UploadForm({
             </Field>
           )}
 
-          <p className="text-sm text-muted">{format(labels.publishingAs, { name: publisher })}</p>
+          {!editing && <p className="text-sm text-muted">{format(labels.publishingAs, { name: publisher })}</p>}
 
           {(state.unexpected || songErrors.length > 0) && (
             <p role="alert" className="text-sm text-danger">
@@ -315,7 +335,13 @@ export function UploadForm({
           )}
 
           <button type="submit" className="btn-primary min-h-12 text-base" disabled={pending || issues.length > 0}>
-            {pending ? labels.submitting : isVersion ? labels.submitVersion : labels.submit}
+            {pending
+              ? labels.submitting
+              : editing
+                ? labels.saveChanges
+                : isVersion
+                  ? labels.submitVersion
+                  : labels.submit}
           </button>
         </div>
 
@@ -331,11 +357,11 @@ export function UploadForm({
               {labels.preview}
             </p>
             <h2 className="font-display text-2xl font-bold tracking-tight">
-              {isVersion ? mode.song.title : fields.title.trim() || labels.untitled}
+              {context ? context.title : fields.title.trim() || labels.untitled}
             </h2>
             <p className="text-muted">
-              {isVersion
-                ? [mode.song.artist, fields.name.trim()].filter(Boolean).join(" · ")
+              {context
+                ? [context.artist, isVersion ? fields.name.trim() : ""].filter(Boolean).join(" · ")
                 : fields.artist.trim() || labels.unknownArtist}
             </p>
             <div className="mt-4 flex flex-wrap gap-2 font-mono text-xs font-semibold">

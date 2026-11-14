@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Fragment } from "react";
+import { Fragment, Suspense } from "react";
 import type { Arrangement, Song } from "@/domain/song";
 import { tempoMarking } from "@/domain/tempo";
 import type { Locale } from "@/i18n/config";
@@ -9,6 +9,7 @@ import { useCases } from "@/infrastructure/container";
 import { Metronome } from "./metronome";
 import { Recordings } from "./recordings";
 import { SongView } from "./song-view";
+import { VersionActions } from "./version-actions";
 
 /**
  * Song page body. Without `versionSlug` it shows the first (original)
@@ -162,6 +163,9 @@ function VersionPicker({
           {current.description}
         </p>
       )}
+      <Suspense fallback={null}>
+        <VersionActions lang={lang} dict={dict} song={song} current={current} />
+      </Suspense>
     </div>
   );
 }

@@ -80,7 +80,13 @@
       "acoustic": "Acústica",
       "piano": "Piano",
       "other": "Otra"
-    }
+    },
+    "editVersion": "Editar",
+    "deleteVersion": "Borrar",
+    "deleteConfirm": "¿Borrar esta versión? No se puede deshacer.",
+    "deleteSongConfirm": "Es la única versión: se borrará la canción entera. No se puede deshacer.",
+    "deleteYes": "Sí, borrar",
+    "cannotDeleteOriginal": "No se puede borrar la versión original mientras la canción tenga otras versiones."
   },
   "metronome": {
     "title": "Metrónomo",
@@ -127,7 +133,9 @@
       "invalid_recording_url": "Enlace no válido: {detail}",
       "unexpected": "No pudimos publicar la canción. Inténtalo de nuevo.",
       "not_found": "Esta canción ya no existe.",
-      "invalid_kind": "Tipo de versión no válido."
+      "invalid_kind": "Tipo de versión no válido.",
+      "forbidden": "Solo quien subió esta versión (o un moderador) puede cambiarla.",
+      "original_has_versions": "Esta es la versión original y la canción tiene otras versiones: no se puede borrar."
     },
     "tap": "Tap",
     "subtitle": "Pega los acordes como los copiarías de otra web. Revisamos cada acorde y te mostramos cómo queda antes de publicar.",
@@ -154,7 +162,10 @@
     "sameAsSong": "Igual ({value})",
     "tempoInheritHelp": "Déjalo vacío para usar el de la canción ({bpm} BPM).",
     "submitVersion": "Publicar versión",
-    "publishingAs": "Se publicará a nombre de {name}."
+    "publishingAs": "Se publicará a nombre de {name}.",
+    "saveChanges": "Guardar cambios",
+    "editTitle": "Editar «{name}»",
+    "editSubtitle": "{title} · los cambios se ven al momento en la página de la versión."
   },
   "notFound": {
     "title": "No encontramos esa página",

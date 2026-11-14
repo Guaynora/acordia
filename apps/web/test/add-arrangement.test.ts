@@ -3,7 +3,7 @@ import { AddArrangement } from "@/application/add-arrangement";
 import { PublishSong } from "@/application/publish-song";
 import { InMemorySongRepository } from "./support/in-memory-song-repository";
 
-const ACTOR = { id: "user-1", name: "Ana" };
+const ACTOR = { id: "user-1", name: "Ana", role: "user" } as const;
 
 const VERSION = {
   songSlug: "cielito-lindo-tradicional",
