@@ -134,6 +134,13 @@
         "x_ds_al_fine": "D.S. al Fine",
         "x_dc_al_fine": "D.C. al Fine"
       }
+    },
+    "views": {
+      "label": "Vista",
+      "chords": "Acordes",
+      "degrees": "Grados",
+      "lyrics": "Letra",
+      "grid": "Cuadrícula"
     }
   },
   "metronome": {

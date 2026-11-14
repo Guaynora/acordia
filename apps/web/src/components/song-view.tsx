@@ -5,6 +5,7 @@ import {
   type ParsedSong,
   formatKey,
   isNonChordMarker,
+  keysByLine,
   parseChord,
   parseChordProSong,
   parseKey,
@@ -21,6 +22,7 @@ import { format } from "@/i18n/format";
 import { AutoScrollCard, type AutoScrollLabels, useAutoScroll } from "./auto-scroll";
 import { type ChangeLabels, ChordSheet, type SectionLabels } from "./chord-sheet";
 import { PracticeClock, PracticeClockContext } from "./practice-clock";
+import { SHEET_VIEWS, type SheetView, useSheetView } from "./use-sheet-view";
 import { type InstrumentLabels, InstrumentPanel } from "./instrument-panel";
 
 export interface SongViewLabels {
@@ -41,6 +43,7 @@ export interface SongViewLabels {
   readonly metronomeShortcut: string;
   readonly autoScroll: AutoScrollLabels;
   readonly sections: SectionLabels;
+  readonly views: Record<SheetView, string> & { readonly label: string };
   readonly changes: ChangeLabels;
   readonly instruments: InstrumentLabels;
 }
@@ -118,6 +121,10 @@ export function SongView({
   const sheetRef = useRef<HTMLElement>(null);
   const shownSong = useMemo(() => view?.song ?? parseChordProSong(chordpro), [view, chordpro]);
   const timeline = useMemo(() => buildScrollTimeline(shownSong.lines), [shownSong]);
+  const [sheetView, setSheetView] = useSheetView();
+  // Degrees count from the key the shown chords are written in (the capo
+  // shapes when there is a capo), following any modulation.
+  const lineKeys = useMemo(() => (view ? keysByLine(view.song.lines, view.shapes) : undefined), [view]);
   // Shared by the metronome (passed in `aside`) and auto-scroll.
   const [clock] = useState(() => new PracticeClock());
   // Tempo, meter and key along the song, for the metronome to follow.
@@ -221,7 +228,22 @@ export function SongView({
                 </>
               )}
             </p>
-            <div className="hidden lg:block">{fontControls}</div>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="segmented" role="group" aria-label={labels.views.label}>
+                {SHEET_VIEWS.map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    aria-pressed={sheetView === option}
+                    onClick={() => setSheetView(option)}
+                    className="segmented-item min-h-8 px-2.5 text-xs"
+                  >
+                    {labels.views[option]}
+                  </button>
+                ))}
+              </div>
+              <div className="hidden lg:block">{fontControls}</div>
+            </div>
           </div>
 
           {capo > 0 && (
@@ -245,6 +267,8 @@ export function SongView({
             selectedChord={selected !== null ? (view.shown[selected] ?? null) : null}
             playing={scroll.position}
             onStartFrom={autoScroll ? scroll.startFrom : undefined}
+            view={sheetView}
+            keys={lineKeys}
           />
         </section>
 

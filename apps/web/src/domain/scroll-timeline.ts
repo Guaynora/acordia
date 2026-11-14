@@ -59,6 +59,24 @@ function barGroups(segments: Segments): number[][] | null {
   return groups.length > 1 ? groups : null;
 }
 
+/**
+ * The bars of a lyric line, each with the chord segments that sound in it
+ * (empty for a bar that holds the chord before it). The scroll timeline
+ * times these and the grid view draws them, so both always agree.
+ */
+export function lineBars(line: SongLine): number[][] {
+  if (line.kind !== "lyrics") return [];
+  const groups = barGroups(line.segments);
+  if (groups) {
+    // Before the first or after the last bar line, only chords make a bar.
+    return groups.filter((chords, g) => chords.length > 0 || (g !== 0 && g !== groups.length - 1));
+  }
+  const chords = line.segments.flatMap((segment, i) => (hasChord(segment.chord) ? [[i]] : []));
+  if (chords.length > 0) return chords.flatMap((bar) => Array.from({ length: BARS_PER_CHORD }, () => bar));
+  // Lyrics without chords: about what a sung line takes, holding the last chord.
+  return line.segments.some((s) => s.text.trim() !== "") ? Array.from({ length: BARS_PER_BARE_LINE }, () => []) : [];
+}
+
 export function buildScrollTimeline(lines: readonly SongLine[]): ScrollTimeline {
   const steps: { line: number; segment: number | null; startBar: number; bars: number }[] = [];
   const marks: ScrollMark[] = [];
@@ -71,40 +89,22 @@ export function buildScrollTimeline(lines: readonly SongLine[]): ScrollTimeline 
   for (const index of performanceOrder(lines)) {
     const line = lines[index];
     if (line?.kind === "change") marks.push({ line: index, bar });
-    if (line?.kind !== "lyrics") continue;
+    if (!line) continue;
 
-    const groups = barGroups(line.segments);
-    if (groups) {
-      const lineStart = steps.length;
-      groups.forEach((chords, g) => {
-        const edge = g === 0 || g === groups.length - 1;
-        // Before the first or after the last bar line, only chords make a bar.
-        if (edge && chords.length === 0) return;
-        if (chords.length > 0) {
-          for (const segment of chords) push(index, segment, 1 / chords.length);
-          return;
-        }
-        // A bar without chords holds the last chord of this line, or the line itself.
-        const last = steps.length > lineStart ? steps.at(-1) : undefined;
-        if (last) {
-          last.bars += 1;
-          bar += 1;
-        } else {
-          push(index, null, 1);
-        }
-      });
-      continue;
-    }
-
-    let chords = 0;
-    line.segments.forEach((segment, i) => {
-      if (hasChord(segment.chord)) {
-        push(index, i, BARS_PER_CHORD);
-        chords++;
+    const lineStart = steps.length;
+    for (const chords of lineBars(line)) {
+      if (chords.length > 0) {
+        for (const segment of chords) push(index, segment, 1 / chords.length);
+        continue;
       }
-    });
-    if (chords === 0 && line.segments.some((s) => s.text.trim() !== "")) {
-      push(index, null, BARS_PER_BARE_LINE);
+      // A bar without chords holds the last chord of this line, or the line itself.
+      const last = steps.length > lineStart ? steps.at(-1) : undefined;
+      if (last) {
+        last.bars += 1;
+        bar += 1;
+      } else {
+        push(index, null, 1);
+      }
     }
   }
 

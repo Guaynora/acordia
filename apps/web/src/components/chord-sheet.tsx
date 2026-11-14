@@ -1,12 +1,16 @@
 import type { MouseEvent, ReactNode } from "react";
 import {
+  type Key,
   type ParsedSong,
   type SectionKind,
   type SongLine,
+  chordDegree,
   parseRamp,
   sectionKindFromLabel,
 } from "@acordia/chord-engine";
+import { lineBars } from "@/domain/scroll-timeline";
 import { format } from "@/i18n/format";
+import type { SheetView } from "./use-sheet-view";
 
 export interface SectionLabels {
   readonly verse: string;
@@ -153,6 +157,8 @@ export function ChordSheet({
   playing = null,
   onStartFrom,
   changeLabels,
+  view = "chords",
+  keys,
 }: {
   song: ParsedSong;
   labels: SectionLabels;
@@ -170,6 +176,9 @@ export function ChordSheet({
   onStartFrom?: (line: number) => void;
   /** How to word tempo, meter and key changes; without it they show as written. */
   changeLabels?: ChangeLabels;
+  view?: SheetView;
+  /** Key in force at each line, for the degrees view. */
+  keys?: readonly Key[];
 }) {
   return (
     <div className="flex flex-col gap-7" style={{ fontSize }}>
@@ -204,6 +213,8 @@ export function ChordSheet({
                   onStart={onStartFrom}
                   onChord={onChord}
                   selectedChord={selectedChord}
+                  view={view}
+                  lineKey={keys?.[index]}
                 />
               ),
             )}
@@ -312,15 +323,31 @@ interface ChordProps {
 
 const PLAYING_CHORD = "rounded bg-secondary text-secondary-foreground";
 
+/** A chord as a scale degree: the number, its suffix raised (5⁷, not 57), and the bass degree. */
+function DegreeText({ symbol, lineKey }: { symbol: string; lineKey: Key }) {
+  const degree = chordDegree(symbol, lineKey);
+  if (!degree) return <>{symbol}</>;
+  return (
+    <>
+      {degree.degree}
+      {degree.suffix && <sup className="text-[0.7em]">{degree.suffix}</sup>}
+      {degree.bass && `/${degree.bass}`}
+    </>
+  );
+}
+
 function ChordLabel({
   symbol,
   className,
   onChord,
   selectedChord,
   playing = false,
-}: ChordProps & { symbol: string; className: string; playing?: boolean }) {
+  lineKey,
+}: ChordProps & { symbol: string; className: string; playing?: boolean; lineKey?: Key | undefined }) {
   if (playing) className = `${className} ${PLAYING_CHORD}`;
-  if (!onChord) return <span className={className}>{symbol}</span>;
+  // In the degrees view the chord reads as a number but still opens its diagram.
+  const shown = lineKey ? <DegreeText symbol={symbol} lineKey={lineKey} /> : symbol;
+  if (!onChord) return <span className={className}>{shown}</span>;
   return (
     <button
       type="button"
@@ -328,7 +355,7 @@ function ChordLabel({
       aria-pressed={selectedChord === symbol}
       className={`${className} -mx-0.5 cursor-pointer rounded px-0.5 text-left hover:bg-accent-soft aria-pressed:bg-accent aria-pressed:text-accent-foreground`}
     >
-      {symbol}
+      {shown}
     </button>
   );
 }
@@ -340,14 +367,19 @@ function Line({
   onStart,
   onChord,
   selectedChord,
+  view,
+  lineKey,
 }: ChordProps & {
   line: LyricsOrEmpty;
   index: number;
   /** Playing segment of this line, null for the whole line, undefined if not playing. */
   playing: number | null | undefined;
   onStart?: ((line: number) => void) | undefined;
+  view: SheetView;
+  lineKey: Key | undefined;
 }) {
-  if (line.kind === "empty") return <div className="h-[0.75em]" aria-hidden="true" />;
+  if (line.kind === "empty") return view === "grid" ? null : <div className="h-[0.75em]" aria-hidden="true" />;
+  const degreeKey = view === "degrees" ? lineKey : undefined;
 
   // A line without chords plays as a whole: mark it with a bar on its left.
   const marker =
@@ -363,6 +395,38 @@ function Line({
 
   // Bar lines alone do not make a line lyrics: "| G | C D |" is chords.
   const chordOnly = line.segments.every((s) => s.text.replace(/\|/g, "").trim() === "");
+
+  if (view === "grid") {
+    return (
+      <GridLine
+        line={line}
+        index={index}
+        playing={playing}
+        start={start}
+        marker={marker}
+        onChord={onChord}
+        selectedChord={selectedChord}
+      />
+    );
+  }
+
+  if (view === "lyrics") {
+    // Singers get the words; a line of only chords has none.
+    if (chordOnly) return null;
+    const words = line.segments
+      .map((segment) => segment.text)
+      .join("")
+      .replace(BAR_SIGN, "")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+    const lyricMarker = playing !== undefined ? " -ml-3 border-l-4 border-secondary pl-2" : marker;
+    return (
+      <p data-line={index} onClick={start} className={`leading-snug${lyricMarker}`}>
+        {words}
+      </p>
+    );
+  }
+
   if (chordOnly) {
     return (
       <div
@@ -379,6 +443,7 @@ function Line({
               onChord={onChord}
               selectedChord={selectedChord}
               playing={playing === i}
+              lineKey={degreeKey}
             />
           ) : null,
           ...Array.from(segment.text.matchAll(BAR_SIGN), (match, b) => <BarLine key={`b${i}-${b}`} sign={match[0]} />),
@@ -399,6 +464,7 @@ function Line({
                 onChord={onChord}
                 selectedChord={selectedChord}
                 playing={playing === i}
+                lineKey={degreeKey}
               />
             ) : (
               ""
@@ -407,6 +473,58 @@ function Line({
           <span className="whitespace-pre">{withBarLines(segment.text || (segment.chord ? " " : ""))}</span>
         </span>
       ))}
+    </div>
+  );
+}
+
+/**
+ * A line as a row of bars, without lyrics: the chords of each bar in a cell,
+ * "%" for a bar that holds the chord before it. Bars come from the same
+ * rules the scroll timeline times, so the grid and playback agree.
+ */
+function GridLine({
+  line,
+  index,
+  playing,
+  start,
+  marker,
+  onChord,
+  selectedChord,
+}: ChordProps & {
+  line: Extract<SongLine, { kind: "lyrics" }>;
+  index: number;
+  playing: number | null | undefined;
+  start: ((event: MouseEvent) => void) | undefined;
+  marker: string;
+}) {
+  const bars = lineBars(line);
+  if (bars.length === 0) return null;
+  const text = line.segments.map((segment) => segment.text).join("");
+  const opens = /\|:/.test(text);
+  const closes = /:\|(?:\s*\(?x\d+\)?)?/i.exec(text)?.[0].replace(/[\s()]/g, "");
+  return (
+    <div data-line={index} onClick={start} className={`flex flex-wrap items-stretch py-0.5 font-mono${marker}`}>
+      {opens && <span className="self-center pr-1 font-bold text-secondary">|:</span>}
+      {bars.map((chords, b) => (
+        <span key={b} className="flex min-w-[4.5em] items-center gap-2 border-l-2 border-border-strong px-2 py-1">
+          {chords.length === 0 ? (
+            <span className="text-muted">%</span>
+          ) : (
+            chords.map((segment) => (
+              <ChordLabel
+                key={segment}
+                symbol={line.segments[segment]?.chord ?? ""}
+                className="font-bold text-accent"
+                onChord={onChord}
+                selectedChord={selectedChord}
+                playing={playing === segment}
+              />
+            ))
+          )}
+        </span>
+      ))}
+      <span className="border-l-2 border-border-strong" aria-hidden="true" />
+      {closes && <span className="self-center pl-1 font-bold text-secondary">{closes}</span>}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { parseChordProSong } from "@acordia/chord-engine";
 import { describe, expect, it } from "vitest";
-import { buildScrollTimeline, stepIndexAt } from "@/domain/scroll-timeline";
+import { buildScrollTimeline, lineBars, stepIndexAt } from "@/domain/scroll-timeline";
 
 const timelineOf = (source: string) => buildScrollTimeline(parseChordProSong(source).lines);
 
@@ -139,5 +139,25 @@ describe("played order", () => {
       { line: 2, bar: 1 },
       { line: 2, bar: 2 },
     ]);
+  });
+});
+
+describe("lineBars", () => {
+  const bars = (source: string) => {
+    const line = parseChordProSong(source).lines[0];
+    return line ? lineBars(line) : [];
+  };
+
+  it("gives one bar per chord without bar lines, and two held bars to a line without chords", () => {
+    expect(bars("And [G]one [C]two")).toEqual([[1], [2]]);
+    expect(bars("only words")).toEqual([[], []]);
+  });
+
+  it("follows bar lines: shared bars, held bars and a pickup", () => {
+    expect(bars("And | [G]one | [C]two [D]three | |")).toEqual([[1], [2, 3], []]);
+  });
+
+  it("has no bars for a line with nothing to play", () => {
+    expect(bars("   ")).toEqual([]);
   });
 });
