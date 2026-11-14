@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   boolean,
   index,
@@ -116,8 +117,18 @@ export const songs = pgTable(
     // account keeps the songs it published.
     createdBy: uuid("created_by").references(() => users.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    /**
+     * Title and artist, lowercase and without accents, kept by Postgres for
+     * search. acordia_unaccent is created in migration 0005.
+     */
+    searchText: text("search_text")
+      .notNull()
+      .generatedAlwaysAs(sql`acordia_unaccent(title || ' ' || artist)`),
   },
-  (table) => [uniqueIndex("songs_slug_idx").on(table.slug)],
+  (table) => [
+    uniqueIndex("songs_slug_idx").on(table.slug),
+    index("songs_search_trgm_idx").using("gin", sql`${table.searchText} gin_trgm_ops`),
+  ],
 );
 
 export const arrangements = pgTable(
