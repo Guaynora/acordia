@@ -17,6 +17,8 @@ interface Token {
 const LINE_DECORATION = /^\(?x\d+\)?$/i;
 const SECTION_IN_BRACKETS = /^\s*\[([^\]]+)\]\s*$/;
 const SECTION_WITH_COLON = /^\s*([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ0-9 .]{0,30}):\s*$/;
+/** A ChordPro directive on its own line, such as {tempo: 140}; kept as written. */
+const DIRECTIVE_LINE = /^\s*\{[a-z_]+\s*(?::.*)?\}\s*$/i;
 
 /** Bar lines on a chord line ("|", or "||" at the end of a section). */
 const BAR_LINE = /^\|+$/;
@@ -120,6 +122,12 @@ export function importChordsOverLyrics(text: string): ImportResult {
       continue;
     }
 
+    // Directives pass through: pasted text can change tempo, meter or key.
+    if (DIRECTIVE_LINE.test(line)) {
+      output.push(line.trim());
+      continue;
+    }
+
     const kind = classify(line);
     if (kind.kind === "text") {
       output.push(line.trimEnd());
@@ -132,7 +140,11 @@ export function importChordsOverLyrics(text: string): ImportResult {
 
     const next = lines.at(i + 1);
     const nextIsLyrics =
-      next !== undefined && next.trim() !== "" && classify(next).kind === "text" && !sectionName(next);
+      next !== undefined &&
+      next.trim() !== "" &&
+      !DIRECTIVE_LINE.test(next) &&
+      classify(next).kind === "text" &&
+      !sectionName(next);
     if (nextIsLyrics) {
       output.push(mergeChordsIntoLyrics(kind.tokens, kind.bars, next));
       i++;

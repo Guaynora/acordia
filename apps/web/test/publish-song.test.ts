@@ -156,6 +156,9 @@ describe("looksLikeChordPro", () => {
   it("treats bracketed section names as plain text", () => {
     expect(looksLikeChordPro("[Coro]\nG  D\nla la")).toBe(false);
     expect(looksLikeChordPro("[G]la [D]la")).toBe(true);
-    expect(looksLikeChordPro("{title: X}\nla la")).toBe(true);
+  });
+
+  it("does not take directives alone for ChordPro, so pasted text keeps being imported", () => {
+    expect(looksLikeChordPro("Puente:\n{tempo: 140}\nEm   C\nla la")).toBe(false);
   });
 });

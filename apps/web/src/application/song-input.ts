@@ -49,13 +49,15 @@ export interface InputError {
 /**
  * ChordPro marks chords in brackets. Plain "chords over lyrics" text may also
  * use brackets, but only for section names such as [Coro], which never parse
- * as chords.
+ * as chords. Directives ({tempo: 140}) do not decide it: the importer keeps
+ * them as they are, so pasted chords-over-lyrics text can change tempo,
+ * meter or key by section too.
  */
 export function looksLikeChordPro(source: string): boolean {
   for (const match of source.matchAll(/\[([^\]]+)\]/g)) {
     if (parseChord(match[1] ?? "")) return true;
   }
-  return /^\s*\{[a-z_]+.*\}\s*$/im.test(source);
+  return false;
 }
 
 /** Converts pasted text to ChordPro and lists any chords that did not parse. */

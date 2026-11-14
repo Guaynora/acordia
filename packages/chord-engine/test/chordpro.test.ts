@@ -125,3 +125,18 @@ describe("importing bar lines", () => {
     expect(chordpro).toBe("|  [G]Walking| [C]down [D]the road|");
   });
 });
+
+describe("importing directives in pasted text", () => {
+  it("keeps tempo, meter and key changes and still converts the chords around them", () => {
+    const pasted = ["Puente:", "{tempo: 140}", "{time: 7/8}", "Em       C", "Otra parte"].join("\n");
+    expect(importChordsOverLyrics(pasted).chordpro).toBe(
+      ["{start_of_bridge: Puente}", "{tempo: 140}", "{time: 7/8}", "[Em]Otra part[C]e", "{end_of_bridge}"].join("\n"),
+    );
+  });
+
+  it("never takes a directive for the lyrics under a chord line", () => {
+    expect(importChordsOverLyrics(["G   D", "{key: Ab}", "la la"].join("\n")).chordpro).toBe(
+      ["[G] [D]", "{key: Ab}", "la la"].join("\n"),
+    );
+  });
+});
