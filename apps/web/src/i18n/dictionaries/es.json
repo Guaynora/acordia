@@ -61,8 +61,6 @@
       "tab": "Tablatura",
       "grid": "Acordes"
     },
-    "keyHelp": "Cambia lo que suena: súbelo o bájalo para cantar cómodo.",
-    "capoHelp": "No cambia lo que suena: cambia las posiciones que tocas en la guitarra.",
     "tempoLabel": "Tempo",
     "timeSignatureLabel": "Compás",
     "noTempo": "Sin tempo indicado",
@@ -77,8 +75,6 @@
       "restart": "Desde el inicio",
       "tempoMode": "Con el metrónomo",
       "manualMode": "Velocidad manual",
-      "tempoHelp": "Dale play aquí o en el metrónomo: tras la cuenta previa, la hoja avanza un compás por acorde al tempo y compás del metrónomo, y resalta el que suena. Toca una línea o el nombre de una sección para empezar desde ahí.",
-      "manualHelp": "Desplaza la página a velocidad constante, sin seguir al metrónomo. Toca una línea o el nombre de una sección para empezar desde ahí.",
       "speed": "Velocidad"
     },
     "versions": "Versiones",
@@ -102,7 +98,6 @@
       "title": "Cómo tocarlo",
       "piano": "Piano",
       "bass": "Bajo",
-      "pick": "Toca un acorde de la letra para ver cómo se toca.",
       "bassNote": "Toca {note} en cualquiera de estas posiciones.",
       "soundingHint": "Con cejilla, piano y bajo ven los acordes que suenan, no las formas de guitarra.",
       "close": "Cerrar",
@@ -123,6 +118,11 @@
       "title": "Grabaciones",
       "play": "Reproducir «{title}»",
       "untitled": "Grabación"
+    },
+    "changes": {
+      "tempo": "♩ = {bpm}",
+      "ramp": "{from} → {to} BPM en {bars} compases",
+      "key": "Tono: {key}"
     }
   },
   "metronome": {
@@ -159,7 +159,10 @@
     "mute": "Silenciar",
     "unmute": "Activar sonido",
     "silentHint": "Sin sonido: sigue el pulso en la pantalla.",
-    "countInOne": "1 comp."
+    "countInOne": "1 comp.",
+    "followingSong": "Sigue los cambios de la canción",
+    "now": "Ahora: {bpm} BPM · {signature}",
+    "next": "Próximo compás: {signature} · {bpm} BPM"
   },
   "upload": {
     "title": "Subir canción",
@@ -192,7 +195,8 @@
       "invalid_kind": "Tipo de versión no válido.",
       "forbidden": "Solo quien subió esta versión (o un moderador) puede cambiarla.",
       "original_has_versions": "Esta es la versión original y la canción tiene otras versiones: no se puede borrar.",
-      "recording_not_found": "No encontramos {detail}: el video no existe o es privado."
+      "recording_not_found": "No encontramos {detail}: el video no existe o es privado.",
+      "invalid_directive": "Revisa {detail}: el valor no es válido o no encaja con el compás."
     },
     "tap": "Tap",
     "subtitle": "Pega los acordes como los copiarías de otra web. Revisamos cada acorde y te mostramos cómo queda antes de publicar.",

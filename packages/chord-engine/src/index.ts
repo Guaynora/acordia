@@ -7,6 +7,7 @@ export * from "./chordpro";
 export * from "./importer";
 export * from "./capo";
 export * from "./song";
+export * from "./tempo-directives";
 export * from "./suggest";
 export * from "./tones";
 export * from "./fretted";

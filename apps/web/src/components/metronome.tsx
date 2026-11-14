@@ -1,9 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { type Accent, METERS, type Meter, type Subdivision, meterFor, subdivisionsFor } from "@/domain/meter";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import {
+  type Accent,
+  METERS,
+  type Meter,
+  type Subdivision,
+  meterFor,
+  meterName,
+  subdivisionsFor,
+} from "@/domain/meter";
 import { MetronomeTicker } from "@/domain/metronome-ticker";
-import { type TempoMarking, tempoMarking } from "@/domain/tempo";
+import { DEFAULT_PRACTICE_BPM, type TempoMarking, tempoMarking } from "@/domain/tempo";
+import { type TempoMap, bpmAt, isSteady, nextSection, sectionAt } from "@/domain/tempo-map";
 import { format } from "@/i18n/format";
 import { usePracticeClock } from "./practice-clock";
 import { useWakeLock } from "./use-wake-lock";
@@ -35,9 +44,10 @@ export interface MetronomeLabels {
   readonly mute: string;
   readonly unmute: string;
   readonly silentHint: string;
+  readonly followingSong: string;
+  readonly now: string;
+  readonly next: string;
 }
-
-const DEFAULT_BPM = 90;
 
 const MIN_BPM = 30;
 const MAX_BPM = 300;
@@ -61,6 +71,29 @@ interface Shown {
   readonly click: number;
   /** Clicks left in the count-in, counting this one; null once playing. */
   readonly countdown: number | null;
+  /** Song bar; null during the count-in. */
+  readonly bar: number | null;
+  /** What was playing at this click, which may differ from the controls when following the song. */
+  readonly meter: Meter;
+  readonly bpm: number;
+}
+
+/**
+ * Tempo and meter for the next click. Following the song, they come from
+ * its tempo map, scaled by how far the player moved the BPM from the
+ * song's (practicing at 80 % slows every section); otherwise from the
+ * controls.
+ */
+function nextClickSettings(
+  ticker: MetronomeTicker,
+  map: TempoMap | null,
+  controls: { meter: Meter; bpm: number },
+): { meter: Meter; bpm: number } {
+  if (!map) return controls;
+  const { bar, click } = ticker.upcoming();
+  const meter = sectionAt(map, bar).meter;
+  const songStart = map.sections[0]?.bpm ?? controls.bpm;
+  return { meter, bpm: bpmAt(map, bar + click / meter.accents.length) * (controls.bpm / songStart) };
 }
 
 const clamp = (bpm: number) => Math.min(MAX_BPM, Math.max(MIN_BPM, Math.round(bpm)));
@@ -83,7 +116,7 @@ export function Metronome({
   markings: Record<TempoMarking, string>;
 }) {
   const songMeter = meterFor(songTimeSignature);
-  const [bpm, setBpm] = useState(clamp(songBpm ?? DEFAULT_BPM));
+  const [bpm, setBpm] = useState(clamp(songBpm ?? DEFAULT_PRACTICE_BPM));
   // What the user is typing; clamped only when they leave the field, so
   // typing "120" does not jump to 30 at the "1" and then to 300.
   const [bpmDraft, setBpmDraft] = useState<string | null>(null);
@@ -97,6 +130,25 @@ export function Metronome({
   // Lets the chord sheet follow the bars and start or stop the metronome.
   const clock = usePracticeClock();
   const runningRef = useRef(false);
+
+  // The song's tempo map, published by the chord sheet.
+  const subscribeMap = useCallback(
+    (notify: () => void) => clock?.subscribe((event) => event.type === "map" && notify()) ?? (() => {}),
+    [clock],
+  );
+  const map = useSyncExternalStore(
+    subscribeMap,
+    () => clock?.getMap() ?? null,
+    () => null,
+  );
+  const songChanges = map !== null && !isSteady(map);
+  // Picking a meter by hand leaves the song's changes for free practice.
+  const [follow, setFollow] = useState(true);
+  const following = follow && songChanges;
+  const followMapRef = useRef<TempoMap | null>(null);
+  useEffect(() => {
+    followMapRef.current = following ? map : null;
+  }, [following, map]);
 
   const bpmRef = useRef(bpm);
   const countInBarsRef = useRef(countInBars);
@@ -167,17 +219,29 @@ export function Metronome({
     contextRef.current = context;
     await context.resume();
 
-    const ticker = new MetronomeTicker(meterRef.current, countInBarsRef.current);
+    // Where the sheet says to start; the count-in plays that section's meter.
+    const startBar = clock?.startBar() ?? 0;
+    const startMap = followMapRef.current;
+    const startMeter = startMap ? sectionAt(startMap, startBar).meter : meterRef.current;
+    const ticker = new MetronomeTicker(startMeter, countInBarsRef.current, startBar);
     tickerRef.current = ticker;
     nextClickTime.current = context.currentTime + 0.05;
 
     timerRef.current = window.setInterval(() => {
       while (nextClickTime.current < context.currentTime + SCHEDULE_AHEAD_S) {
         const time = nextClickTime.current;
-        const tick = ticker.next(meterRef.current, subdivisionRef.current, bpmRef.current);
+        const { meter, bpm } = nextClickSettings(ticker, followMapRef.current, {
+          meter: meterRef.current,
+          bpm: bpmRef.current,
+        });
+        // A section may switch to a meter without the chosen subdivision.
+        const subdivision = subdivisionsFor(meter).includes(subdivisionRef.current) ? subdivisionRef.current : 1;
+        const tick = ticker.next(meter, subdivision, bpm);
         // Count-in clicks sound higher so the start of the music is clear.
         sound(context, tick.accent, time, tick.countdown !== null);
-        if (tick.main) queue.current.push({ time, click: tick.click, countdown: tick.countdown });
+        if (tick.main) {
+          queue.current.push({ time, click: tick.click, countdown: tick.countdown, bar: tick.bar, meter, bpm });
+        }
         nextClickTime.current += tick.duration;
       }
     }, LOOKAHEAD_MS);
@@ -187,7 +251,7 @@ export function Metronome({
       while (queue.current.length > 0 && (queue.current[0]?.time ?? Infinity) <= context.currentTime) {
         latest = queue.current.shift() ?? null;
         // A bar of the music (not the count-in) starts as this click sounds.
-        if (latest && latest.countdown === null && latest.click === 0) clock?.emit({ type: "downbeat" });
+        if (latest?.bar != null && latest.click === 0) clock?.emit({ type: "downbeat", bar: latest.bar });
       }
       if (latest) setShown(latest);
       frameRef.current = requestAnimationFrame(draw);
@@ -203,14 +267,21 @@ export function Metronome({
       clock?.attach({
         toggle: () => (runningRef.current ? stop() : void start()),
         isRunning: () => runningRef.current,
+        jumpTo: (bar) => tickerRef.current?.jumpTo(bar),
       }),
     [clock, start, stop],
   );
 
+  // Release the audio device when the metronome goes away. Next.js may keep
+  // a page mounted but hidden and run this cleanup more than once, so drop
+  // the context once closed: closing it twice throws, and start() makes a
+  // new one when needed.
   useEffect(
     () => () => {
       stop();
-      void contextRef.current?.close();
+      const context = contextRef.current;
+      contextRef.current = null;
+      if (context && context.state !== "closed") void context.close();
     },
     [stop],
   );
@@ -227,15 +298,34 @@ export function Metronome({
     }
   };
 
-  const changed = (songBpm !== null && bpm !== songBpm) || meter.signature !== songMeter.signature;
+  const changed =
+    (songBpm !== null && bpm !== songBpm) || meter.signature !== songMeter.signature || (songChanges && !follow);
   const resetToSong = () => {
-    setBpm(clamp(songBpm ?? DEFAULT_BPM));
+    setBpm(clamp(songBpm ?? DEFAULT_PRACTICE_BPM));
     setMeter(songMeter);
+    setFollow(true);
+  };
+  const pickMeter = (signature: string) => {
+    setMeter(meterFor(signature));
+    setFollow(false);
   };
 
-  const hint = meter.kind === "compound" ? labels.compoundHint : meter.kind === "odd" ? labels.oddHint : null;
+  // Following the song, show what is playing now (or where it starts).
+  const playingMeter = following ? (running && shown ? shown.meter : (map?.sections[0]?.meter ?? meter)) : meter;
+  const hint =
+    playingMeter.kind === "compound" ? labels.compoundHint : playingMeter.kind === "odd" ? labels.oddHint : null;
   const click = shown?.click ?? null;
   const counting = shown?.countdown != null;
+  // Warn a bar ahead of a section that changes tempo or meter.
+  const upcoming = following && map && running && shown?.bar != null ? nextSection(map, shown.bar) : null;
+  const scale = bpm / (map?.sections[0]?.bpm ?? bpm);
+  const warning =
+    upcoming && shown?.bar != null && upcoming.bar === shown.bar + 1
+      ? format(labels.next, {
+          bpm: Math.round((upcoming.ramp?.from ?? upcoming.bpm) * scale),
+          signature: meterName(upcoming.meter),
+        })
+      : null;
 
   return (
     <section id="metronome" aria-label={labels.title} className="card scroll-mt-24 p-5">
@@ -247,6 +337,7 @@ export function Metronome({
               ? format(labels.songTempo, { bpm: songBpm, signature: songMeter.signature })
               : format(labels.songNoTempo, { signature: songMeter.signature })}
           </p>
+          {following && <p className="text-xs font-semibold text-secondary">{labels.followingSong}</p>}
         </div>
         {changed && (
           <button
@@ -264,8 +355,8 @@ export function Metronome({
           <button
             key={m.signature}
             type="button"
-            aria-pressed={m.signature === meter.signature}
-            onClick={() => setMeter(meterFor(m.signature))}
+            aria-pressed={m.signature === playingMeter.signature}
+            onClick={() => pickMeter(m.signature)}
             className="segmented-item min-h-8 px-2.5 text-xs"
           >
             {m.signature}
@@ -318,11 +409,22 @@ export function Metronome({
           : ""}
       </p>
 
+      {following && running && shown && shown.bar !== null && (
+        <p className="mt-2 text-center font-mono text-xs" aria-live="polite">
+          {format(labels.now, { bpm: Math.round(shown.bpm), signature: meterName(shown.meter) })}
+        </p>
+      )}
+      {warning && (
+        <p role="status" className="mt-2 rounded-lg bg-secondary-soft px-3 py-1.5 text-center text-xs font-semibold">
+          {warning}
+        </p>
+      )}
+
       <div className="relative mt-4" aria-hidden="true">
         <div className="flex items-end gap-1">
-          {meter.accents.map((accent, i) => (
+          {playingMeter.accents.map((accent, i) => (
             <span
-              key={`${meter.signature}-${i}`}
+              key={`${playingMeter.signature}-${i}`}
               className={`flex flex-1 items-center justify-center rounded-md font-mono text-[10px] font-bold transition-colors duration-75 ${
                 accent === 0 ? "h-8" : accent === 1 ? "h-6" : "h-5"
               } ${
@@ -335,7 +437,7 @@ export function Metronome({
                     : "bg-surface-strong text-muted"
               }`}
             >
-              {meter.accents.length <= 7 ? i + 1 : ""}
+              {playingMeter.accents.length <= 7 ? i + 1 : ""}
             </span>
           ))}
         </div>
@@ -419,7 +521,7 @@ export function Metronome({
       {muted && running && <p className="mt-3 text-xs text-muted">{labels.silentHint}</p>}
       {hint && <p className="mt-3 text-xs text-muted">{hint}</p>}
       <p className="sr-only" aria-live="off">
-        {click !== null ? format(labels.beat, { beat: click + 1, total: meter.accents.length }) : ""}
+        {click !== null ? format(labels.beat, { beat: click + 1, total: playingMeter.accents.length }) : ""}
       </p>
     </section>
   );

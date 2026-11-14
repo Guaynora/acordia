@@ -13,23 +13,23 @@ import {
   transposeChordPro,
   transposeKey,
 } from "@acordia/chord-engine";
-import { type ReactNode, useMemo, useRef, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { buildScrollTimeline } from "@/domain/scroll-timeline";
+import { DEFAULT_PRACTICE_BPM } from "@/domain/tempo";
+import { buildTempoMap } from "@/domain/tempo-map";
 import { format } from "@/i18n/format";
 import { AutoScrollCard, type AutoScrollLabels, useAutoScroll } from "./auto-scroll";
-import { ChordSheet, type SectionLabels } from "./chord-sheet";
+import { type ChangeLabels, ChordSheet, type SectionLabels } from "./chord-sheet";
 import { PracticeClock, PracticeClockContext } from "./practice-clock";
 import { type InstrumentLabels, InstrumentPanel } from "./instrument-panel";
 
 export interface SongViewLabels {
   readonly key: string;
-  readonly keyHelp: string;
   readonly originalKey: string;
   readonly transposeDown: string;
   readonly transposeUp: string;
   readonly reset: string;
   readonly capo: string;
-  readonly capoHelp: string;
   readonly noCapo: string;
   readonly capoOption: string;
   readonly capoSuggested: string;
@@ -41,6 +41,7 @@ export interface SongViewLabels {
   readonly metronomeShortcut: string;
   readonly autoScroll: AutoScrollLabels;
   readonly sections: SectionLabels;
+  readonly changes: ChangeLabels;
   readonly instruments: InstrumentLabels;
 }
 
@@ -68,12 +69,17 @@ const DEFAULT_FONT_INDEX = 2;
 export function SongView({
   chordpro,
   writtenKey,
+  tempo,
+  timeSignature,
   autoScroll = false,
   labels,
   aside,
 }: {
   chordpro: string;
   writtenKey: string;
+  /** BPM of this version, or null when the author gave none. */
+  tempo: number | null;
+  timeSignature: string;
   /** Feature flag: show the auto-scroll controls. */
   autoScroll?: boolean;
   labels: SongViewLabels;
@@ -114,8 +120,20 @@ export function SongView({
   const timeline = useMemo(() => buildScrollTimeline(shownSong.lines), [shownSong]);
   // Shared by the metronome (passed in `aside`) and auto-scroll.
   const [clock] = useState(() => new PracticeClock());
-  // Without a key the view below has no aside, hence no metronome to follow.
-  const scroll = useAutoScroll({ timeline, clock, canFollow: view !== null, sheetRef });
+  // Tempo, meter and key along the song, for the metronome to follow.
+  const tempoMap = useMemo(
+    () =>
+      buildTempoMap(shownSong.lines, timeline, {
+        bpm: tempo ?? DEFAULT_PRACTICE_BPM,
+        signature: timeSignature,
+        key: writtenKey,
+      }),
+    [shownSong, timeline, tempo, timeSignature, writtenKey],
+  );
+  useEffect(() => clock.setMap(tempoMap), [clock, tempoMap]);
+  // Following the metronome needs the feature on and a metronome on the page
+  // (without a key the view below has no aside).
+  const scroll = useAutoScroll({ timeline, clock, canFollow: autoScroll && view !== null, sheetRef });
   const scrollCard = autoScroll ? <AutoScrollCard scroll={scroll} labels={labels.autoScroll} /> : null;
 
   const fontSize = FONT_SIZES[fontIndex] ?? 18;
@@ -129,6 +147,7 @@ export function SongView({
           <ChordSheet
             song={shownSong}
             labels={labels.sections}
+            changeLabels={labels.changes}
             fontSize={fontSize}
             playing={scroll.position}
             onStartFrom={autoScroll ? scroll.startFrom : undefined}
@@ -220,6 +239,7 @@ export function SongView({
           <ChordSheet
             song={view.song}
             labels={labels.sections}
+            changeLabels={labels.changes}
             fontSize={fontSize}
             onChord={pickChord}
             selectedChord={selected !== null ? (view.shown[selected] ?? null) : null}
@@ -257,7 +277,6 @@ export function SongView({
                 +
               </button>
             </div>
-            <p className="mt-3 text-sm text-muted">{labels.keyHelp}</p>
           </section>
 
           <section className="card hidden p-5 lg:block">
@@ -278,7 +297,6 @@ export function SongView({
                 ))}
               </div>
             )}
-            <p className="mt-3 text-sm text-muted">{labels.capoHelp}</p>
           </section>
 
           <div className="hidden lg:block">{panel()}</div>

@@ -1,5 +1,12 @@
 import type { MouseEvent } from "react";
-import { type ParsedSong, type SectionKind, type SongLine, sectionKindFromLabel } from "@acordia/chord-engine";
+import {
+  type ParsedSong,
+  type SectionKind,
+  type SongLine,
+  parseRamp,
+  sectionKindFromLabel,
+} from "@acordia/chord-engine";
+import { format } from "@/i18n/format";
 
 export interface SectionLabels {
   readonly verse: string;
@@ -9,11 +16,27 @@ export interface SectionLabels {
   readonly grid: string;
 }
 
+/** How tempo, meter and key changes read on the sheet. */
+export interface ChangeLabels {
+  /** "♩ = {bpm}" */
+  readonly tempo: string;
+  /** "{from} → {to} BPM in {bars} bars" */
+  readonly ramp: string;
+  /** "Key: {key}" */
+  readonly key: string;
+}
+
 type LyricsOrEmpty = Extract<SongLine, { kind: "lyrics" } | { kind: "empty" }>;
+type ChangeLine = Extract<SongLine, { kind: "change" }>;
+/** Change directives written together, shown as one row of tags. */
+interface ChangeGroup {
+  readonly kind: "changes";
+  readonly changes: ChangeLine[];
+}
 
 /** A line to render, with its index in the parsed song's `lines`. */
 interface IndexedLine {
-  line: LyricsOrEmpty;
+  line: LyricsOrEmpty | ChangeGroup;
   index: number;
 }
 
@@ -46,9 +69,20 @@ function toBlocks(song: ParsedSong, labels: SectionLabels): Block[] {
     return block;
   };
   let current: Block | null = null;
+  // Directives before the first lyrics restate the song's own values,
+  // which the page header already shows.
+  const firstLyrics = song.lines.findIndex((line) => line.kind === "lyrics");
 
   song.lines.forEach((line, index) => {
     switch (line.kind) {
+      case "change": {
+        if (firstLyrics < 0 || index < firstLyrics) break;
+        const block: Block = (current ??= open("other", null));
+        const last = block.lines.at(-1)?.line;
+        if (last?.kind === "changes") last.changes.push(line);
+        else block.lines.push({ line: { kind: "changes", changes: [line] }, index });
+        break;
+      }
       case "section-start": {
         const kind = KNOWN_SECTIONS.has(line.section) ? (line.section as SectionKind) : "other";
         current = open(kind, line.label ?? sectionLabel(line.section, labels));
@@ -58,7 +92,7 @@ function toBlocks(song: ParsedSong, labels: SectionLabels): Block[] {
         current = open("other", null);
         break;
       case "comment":
-        if (current && current.label === null && current.lines.every((l) => l.line.kind === "empty")) {
+        if (current && current.label === null && current.lines.every((l) => l.line.kind !== "lyrics")) {
           current.label = line.text;
           current.kind = sectionKindFromLabel(line.text);
         } else {
@@ -102,6 +136,7 @@ export function ChordSheet({
   selectedChord = null,
   playing = null,
   onStartFrom,
+  changeLabels,
 }: {
   song: ParsedSong;
   labels: SectionLabels;
@@ -117,6 +152,8 @@ export function ChordSheet({
    * there (the line's index in `song.lines`). Chords keep their own action.
    */
   onStartFrom?: (line: number) => void;
+  /** How to word tempo, meter and key changes; without it they show as written. */
+  changeLabels?: ChangeLabels;
 }) {
   return (
     <div className="flex flex-col gap-7" style={{ fontSize }}>
@@ -139,17 +176,21 @@ export function ChordSheet({
             </h3>
           )}
           <div className="flex flex-col gap-1">
-            {block.lines.map(({ line, index }) => (
-              <Line
-                key={index}
-                line={line}
-                index={index}
-                playing={playing?.line === index ? playing.segment : undefined}
-                onStart={onStartFrom}
-                onChord={onChord}
-                selectedChord={selectedChord}
-              />
-            ))}
+            {block.lines.map(({ line, index }) =>
+              line.kind === "changes" ? (
+                <Changes key={index} changes={line.changes} labels={changeLabels} />
+              ) : (
+                <Line
+                  key={index}
+                  line={line}
+                  index={index}
+                  playing={playing?.line === index ? playing.segment : undefined}
+                  onStart={onStartFrom}
+                  onChord={onChord}
+                  selectedChord={selectedChord}
+                />
+              ),
+            )}
           </div>
         </section>
       ))}
@@ -178,6 +219,39 @@ function SectionLabel({
     >
       {label} <span aria-hidden="true">▸</span>
     </button>
+  );
+}
+
+/** One change as the sheet shows it: "♩ = 140", "7/8", "(2+2+3)", "Key: Ab", a ramp. */
+function changeText(change: ChangeLine, labels: ChangeLabels | undefined): string {
+  const value = change.value.trim();
+  if (!labels) return `${change.directive}: ${value}`;
+  switch (change.directive) {
+    case "tempo":
+      return format(labels.tempo, { bpm: value });
+    case "time":
+      return value.replace(/\s+/g, "");
+    case "x_groups":
+      return `(${value.replace(/\s+/g, "")})`;
+    case "key":
+      return format(labels.key, { key: value });
+    case "x_ramp": {
+      const ramp = parseRamp(value);
+      return ramp ? format(labels.ramp, { from: ramp.from, to: ramp.to, bars: ramp.bars }) : value;
+    }
+  }
+}
+
+/** Tags marking where the tempo, meter or key changes. */
+function Changes({ changes, labels }: { changes: readonly ChangeLine[]; labels: ChangeLabels | undefined }) {
+  return (
+    <p className="flex flex-wrap gap-1.5 py-1 font-mono text-[11px] font-semibold">
+      {changes.map((change, i) => (
+        <span key={i} className="rounded-md bg-secondary-soft px-2 py-0.5 text-secondary">
+          {changeText(change, labels)}
+        </span>
+      ))}
+    </p>
   );
 }
 

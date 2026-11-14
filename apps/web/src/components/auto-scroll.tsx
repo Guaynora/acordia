@@ -13,8 +13,6 @@ export interface AutoScrollLabels {
   readonly restart: string;
   readonly tempoMode: string;
   readonly manualMode: string;
-  readonly tempoHelp: string;
-  readonly manualHelp: string;
   readonly speed: string;
 }
 
@@ -102,37 +100,33 @@ export function useAutoScroll({
   useEffect(
     () =>
       clock.subscribe((event) => {
-        if (event.type !== "downbeat") setMetronomeRunning(event.type === "start");
+        if (event.type === "start" || event.type === "stop") setMetronomeRunning(event.type === "start");
       }),
     [clock],
   );
 
-  // Tempo mode: each downbeat the player hears moves the sheet one bar.
+  // Tempo mode: the metronome counts the song's bars and each downbeat says
+  // which one sounds; the sheet shows it. The sheet only says where to start.
   useEffect(() => {
     if (activeMode !== "tempo") return;
-    // Bar (counted from the song's first step) that the last downbeat played.
-    let bar = 0;
     let shownLine = -1;
     let following = false;
 
-    const begin = () => {
-      const index = startIndex();
+    const place = (index: number) => {
       const step = live.current.timeline.steps[index];
-      bar = (step?.startBar ?? 0) - 1;
+      if (!step) return null;
       live.current.stepIndex = index;
       following = true;
-      // Bring the first line into place during the count-in.
-      if (step) {
+      if (step.line !== shownLine) {
         shownLine = step.line;
         showLine(step.line);
       }
+      return step;
     };
 
-    const onDownbeat = () => {
+    const onDownbeat = (bar: number) => {
       if (!following) return;
-      bar += 1;
-      const { timeline: current } = live.current;
-      const index = stepIndexAt(current, bar);
+      const index = stepIndexAt(live.current.timeline, bar);
       if (index === null) {
         // The song is over; the metronome may keep going.
         following = false;
@@ -140,39 +134,34 @@ export function useAutoScroll({
         setPosition(null);
         return;
       }
-      const step = current.steps[index];
-      if (!step) return;
-      live.current.stepIndex = index;
-      setPosition({ line: step.line, segment: step.segment });
-      if (step.line !== shownLine) {
-        shownLine = step.line;
-        showLine(step.line);
-      }
+      const step = place(index);
+      if (step) setPosition({ line: step.line, segment: step.segment });
     };
+
+    // Asked by the metronome as it starts: bring the first line into place
+    // during the count-in and tell it which bar that is.
+    const releaseStart = clock.provideStart(() => place(startIndex())?.startBar ?? 0);
 
     // Move to a step. Playing, the next downbeat plays it; stopped, the
     // next start begins there (it is in view after this scroll).
     jumpRef.current = (index: number) => {
-      const step = live.current.timeline.steps[index];
+      const step = place(index);
       if (!step) return;
-      bar = step.startBar - 1;
-      live.current.stepIndex = index;
       setPosition({ line: step.line, segment: step.segment });
-      shownLine = step.line;
-      showLine(step.line);
+      if (clock.isMetronomeRunning()) clock.jumpTo(step.startBar);
     };
 
-    // Switching to tempo mode while the metronome already plays joins in.
-    if (clock.isMetronomeRunning()) begin();
+    // Switching to tempo mode while the metronome plays: join from the first visible line.
+    if (clock.isMetronomeRunning()) jumpRef.current(startIndex());
 
     const unsubscribe = clock.subscribe((event) => {
-      if (event.type === "start") begin();
+      if (event.type === "downbeat") onDownbeat(event.bar);
       // On stop, keep the highlight and step so play resumes from there.
       else if (event.type === "stop") following = false;
-      else onDownbeat();
     });
     return () => {
       unsubscribe();
+      releaseStart();
       jumpRef.current = null;
     };
   }, [activeMode, clock, startIndex, showLine]);
@@ -283,29 +272,24 @@ export function AutoScrollCard({ scroll, labels }: { scroll: AutoScroll; labels:
         </button>
       </div>
 
-      {scroll.mode === "tempo" ? (
-        <p className="mt-3 text-sm text-muted">{labels.tempoHelp}</p>
-      ) : (
-        <>
-          <label className="mt-4 flex flex-col gap-2">
-            <span className="flex items-center justify-between text-sm">
-              <span>{labels.speed}</span>
-              <span className="font-mono text-xs text-muted tabular-nums">
-                {scroll.speed + 1}/{scroll.speedCount}
-              </span>
+      {scroll.mode === "manual" && (
+        <label className="mt-4 flex flex-col gap-2">
+          <span className="flex items-center justify-between text-sm">
+            <span>{labels.speed}</span>
+            <span className="font-mono text-xs text-muted tabular-nums">
+              {scroll.speed + 1}/{scroll.speedCount}
             </span>
-            <input
-              type="range"
-              min={0}
-              max={scroll.speedCount - 1}
-              step={1}
-              value={scroll.speed}
-              onChange={(e) => scroll.setSpeed(Number(e.target.value))}
-              className="accent-accent"
-            />
-          </label>
-          <p className="mt-3 text-sm text-muted">{labels.manualHelp}</p>
-        </>
+          </span>
+          <input
+            type="range"
+            min={0}
+            max={scroll.speedCount - 1}
+            step={1}
+            value={scroll.speed}
+            onChange={(e) => scroll.setSpeed(Number(e.target.value))}
+            className="accent-accent"
+          />
+        </label>
       )}
     </section>
   );

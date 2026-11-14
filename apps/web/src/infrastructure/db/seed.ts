@@ -3,6 +3,8 @@
  * validation run exactly as they do for user uploads.
  */
 import { eq } from "drizzle-orm";
+import { parseKey, transposeChordPro } from "@acordia/chord-engine";
+import { AddArrangement } from "../../application/add-arrangement";
 import { PublishSong } from "../../application/publish-song";
 import type { Actor } from "../../domain/user";
 import { OEmbedRecordingInfo } from "../oembed/oembed-recording-info";
@@ -51,20 +53,57 @@ const CIELITO_LINDO = [
 // "Amazing Grace": words by John Newton (1779), last verse first printed in
 // 1829, sung to "New Britain" (1829). All in the public domain. Written with
 // exactly one chord per bar (3/4), so auto-scroll at tempo follows the music.
+const AMAZING_GRACE_VERSES = [
+  ["A[G]mazing [G7]grace, how [C]sweet the [G]sound", "That [G]saved a [Em]wretch like [D]me, [D7]", "I [G]once was [G7]lost, but [C]now am [G]found,", "Was [Em]blind, but [D]now I [G]see. [G]"],
+  ["'Twas [G]grace that [G7]taught my [C]heart to [G]fear,", "And [G]grace my [Em]fears re[D]lieved; [D7]", "How [G]precious [G7]did that [C]grace ap[G]pear", "The [Em]hour I [D]first be[G]lieved. [G]"],
+  ["Through [G]many [G7]dangers, [C]toils and [G]snares,", "I [G]have al[Em]ready [D]come; [D7]", "'Tis [G]grace hath [G7]brought me [C]safe thus [G]far,", "And [Em]grace will [D]lead me [G]home. [G]"],
+  ["The [G]Lord has [G7]promised [C]good to [G]me,", "His [G]word my [Em]hope se[D]cures; [D7]", "He [G]will my [G7]shield and [C]portion [G]be,", "As [Em]long as [D]life en[G]dures. [G]"],
+  ["Yea, [G]when this [G7]flesh and [C]heart shall [G]fail,", "And [G]mortal [Em]life shall [D]cease, [D7]", "I [G]shall pos[G7]sess, with[C]in the [G]veil,", "A [Em]life of [D]joy and [G]peace. [G]"],
+  ["When [G]we've been [G7]there ten [C]thousand [G]years,", "Bright [G]shining [Em]as the [D]sun, [D7]", "We've [G]no less [G7]days to [C]sing God's [G]praise", "Than [Em]when we'd [D]first be[G]gun. [G]"],
+] as const;
+
+const verse = (n: number, lines: readonly string[], changes: readonly string[] = []) => [
+  `{start_of_verse: Verse ${n}}`,
+  ...changes,
+  ...lines,
+  "{end_of_verse}",
+  "",
+];
+
 const AMAZING_GRACE = [
   "{c: Intro}",
   "[G] [C] [G] [D7]",
   "",
-  ...[
-    ["A[G]mazing [G7]grace, how [C]sweet the [G]sound", "That [G]saved a [Em]wretch like [D]me, [D7]", "I [G]once was [G7]lost, but [C]now am [G]found,", "Was [Em]blind, but [D]now I [G]see. [G]"],
-    ["'Twas [G]grace that [G7]taught my [C]heart to [G]fear,", "And [G]grace my [Em]fears re[D]lieved; [D7]", "How [G]precious [G7]did that [C]grace ap[G]pear", "The [Em]hour I [D]first be[G]lieved. [G]"],
-    ["Through [G]many [G7]dangers, [C]toils and [G]snares,", "I [G]have al[Em]ready [D]come; [D7]", "'Tis [G]grace hath [G7]brought me [C]safe thus [G]far,", "And [Em]grace will [D]lead me [G]home. [G]"],
-    ["The [G]Lord has [G7]promised [C]good to [G]me,", "His [G]word my [Em]hope se[D]cures; [D7]", "He [G]will my [G7]shield and [C]portion [G]be,", "As [Em]long as [D]life en[G]dures. [G]"],
-    ["Yea, [G]when this [G7]flesh and [C]heart shall [G]fail,", "And [G]mortal [Em]life shall [D]cease, [D7]", "I [G]shall pos[G7]sess, with[C]in the [G]veil,", "A [Em]life of [D]joy and [G]peace. [G]"],
-    ["When [G]we've been [G7]there ten [C]thousand [G]years,", "Bright [G]shining [Em]as the [D]sun, [D7]", "We've [G]no less [G7]days to [C]sing God's [G]praise", "Than [Em]when we'd [D]first be[G]gun. [G]"],
-  ].flatMap((lines, i) => [`{start_of_verse: Verse ${i + 1}}`, ...lines, "{end_of_verse}", ""]),
+  ...AMAZING_GRACE_VERSES.flatMap((lines, i) => verse(i + 1, lines)),
   "{c: Outro}",
   "[C] [G] [D7] [G]",
+].join("\n");
+
+/** Writes ChordPro lines a key higher or lower, with the engine's spelling. */
+function inKey(lines: readonly string[], from: string, to: string): string[] {
+  const fromKey = parseKey(from);
+  const toKey = parseKey(to);
+  if (!fromKey || !toKey) throw new Error(`Bad seed keys ${from} -> ${to}`);
+  return transposeChordPro(lines.join("\n"), fromKey, toKey).text.split("\n");
+}
+
+// A version that exercises every per-section change: a two-bar interlude in
+// 4/4, a faster fifth verse back in 3/4, the last verse half a step up, and
+// a final ritardando.
+const AMAZING_GRACE_BUILD = [
+  "{c: Intro}",
+  "[G] [C] [G] [D7]",
+  "",
+  ...AMAZING_GRACE_VERSES.slice(0, 4).flatMap((lines, i) => verse(i + 1, lines)),
+  "{c: Interlude}",
+  "{time: 4/4}",
+  "[C] [D7]",
+  "",
+  ...verse(5, AMAZING_GRACE_VERSES[4], ["{time: 3/4}", "{tempo: 92}"]),
+  ...verse(6, inKey(AMAZING_GRACE_VERSES[5], "G", "Ab"), ["{key: Ab}"]),
+  "{c: Outro}",
+  "{x_ramp: 92-60 4}",
+  "[Db] [Ab] [Eb7] [Ab]",
 ].join("\n");
 
 interface SeedSong {
@@ -98,7 +137,29 @@ const SONGS: readonly SeedSong[] = [
   },
 ];
 
-/** Publishes each song that is not there yet, so new seeds apply to old databases. */
+interface SeedVersion {
+  readonly songSlug: string;
+  readonly slug: string;
+  readonly name: string;
+  readonly kind: string;
+  readonly description: string;
+  readonly key: string;
+  readonly source: string;
+}
+
+const VERSIONS: readonly SeedVersion[] = [
+  {
+    songSlug: "amazing-grace-john-newton",
+    slug: "final-en-ab",
+    name: "Final en Ab",
+    kind: "other",
+    description: "Interludio en 4/4, quinta estrofa más rápida, la última medio tono arriba y un final ritardando.",
+    key: "G",
+    source: AMAZING_GRACE_BUILD,
+  },
+];
+
+/** Publishes each song and version that is not there yet, so new seeds apply to old databases. */
 async function main() {
   const db = getDb();
   const repository = new DrizzleSongRepository(db);
@@ -110,6 +171,15 @@ async function main() {
       continue;
     }
     console.log(slug, await publish.execute({ ...song, recordingUrls: [] }, actor));
+  }
+  const addVersion = new AddArrangement(repository);
+  for (const { slug, ...version } of VERSIONS) {
+    const song = await repository.findBySlug(version.songSlug);
+    if (song?.arrangements.some((a) => a.slug === slug)) {
+      console.log(`${version.songSlug}/${slug}: already seeded.`);
+      continue;
+    }
+    console.log(`${version.songSlug}/${slug}`, await addVersion.execute({ ...version, tempo: "", timeSignature: "" }, actor));
   }
 }
 

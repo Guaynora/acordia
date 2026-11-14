@@ -31,6 +31,9 @@ describe("parseChordProSong", () => {
     );
     expect(song.metadata).toEqual({ title: "Example", key: "G", tempo: "92" });
     expect(song.lines).toEqual([
+      // {key} and {tempo} also mark where they apply.
+      { kind: "change", directive: "key", value: "G" },
+      { kind: "change", directive: "tempo", value: "92" },
       { kind: "empty" },
       { kind: "section-start", section: "chorus", label: "Coro" },
       { kind: "lyrics", segments: [{ chord: "G", text: "La la" }] },

@@ -52,3 +52,37 @@ describe("MetronomeTicker", () => {
     expect(ticker.next(meterFor("7/8"), 1, 100)).toMatchObject({ click: 0, accent: 0 });
   });
 });
+
+describe("MetronomeTicker bars", () => {
+  const threeFour = meterFor("3/4");
+
+  it("numbers song bars from the start bar, leaving the count-in out", () => {
+    const ticker = new MetronomeTicker(threeFour, 1, 8);
+    expect(ticker.upcoming()).toEqual({ bar: 8, click: 0 });
+    const ticks = take(ticker, 9, threeFour, 1, 120);
+    expect(ticks.map((t) => t.bar)).toEqual([null, null, null, 8, 8, 8, 9, 9, 9]);
+  });
+
+  it("says which bar and click comes next, even between subdivisions", () => {
+    const ticker = new MetronomeTicker(threeFour, 0, 0);
+    take(ticker, 3, threeFour, 2, 120); // downbeat, its eighth, beat 2
+    expect(ticker.upcoming()).toEqual({ bar: 0, click: 1 });
+    take(ticker, 3, threeFour, 2, 120);
+    expect(ticker.upcoming()).toEqual({ bar: 1, click: 0 });
+  });
+
+  it("jumps to a bar on the next downbeat, not mid-bar", () => {
+    const ticker = new MetronomeTicker(threeFour, 0, 0);
+    ticker.next(threeFour, 1, 120);
+    ticker.jumpTo(20);
+    expect(take(ticker, 4, threeFour, 1, 120).map((t) => t.bar)).toEqual([0, 0, 20, 20]);
+  });
+
+  it("lets a jump during the count-in move where the music starts", () => {
+    const ticker = new MetronomeTicker(threeFour, 1, 0);
+    ticker.next(threeFour, 1, 120);
+    ticker.jumpTo(5);
+    expect(ticker.upcoming().bar).toBe(5);
+    expect(take(ticker, 3, threeFour, 1, 120).map((t) => t.bar)).toEqual([null, null, 5]);
+  });
+});

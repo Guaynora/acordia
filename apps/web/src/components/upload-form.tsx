@@ -385,7 +385,7 @@ export function UploadForm({
           </div>
           <div className="max-h-[70vh] overflow-auto p-5 sm:p-7">
             {preview ? (
-              <ChordSheet song={preview.song} labels={songLabels.sections} fontSize={16} />
+              <ChordSheet song={preview.song} labels={songLabels.sections} changeLabels={songLabels.changes} fontSize={16} />
             ) : (
               <p className="text-sm text-muted">{labels.previewEmpty}</p>
             )}

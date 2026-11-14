@@ -67,6 +67,8 @@ export async function SongPageContent({
         key={arrangement.id}
         chordpro={arrangement.chordpro}
         writtenKey={arrangement.key}
+        tempo={tempo}
+        timeSignature={timeSignature}
         autoScroll={isFeatureEnabled("autoScroll")}
         labels={dict.song}
         aside={

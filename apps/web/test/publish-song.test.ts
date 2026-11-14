@@ -62,6 +62,37 @@ describe("PublishSong", () => {
     expect(repository.songs).toHaveLength(0);
   });
 
+  it("rejects tempo, meter and grouping changes it cannot follow", async () => {
+    const repository = new InMemorySongRepository();
+    const result = await new PublishSong(repository, new FakeRecordingInfo()).execute(
+      {
+        ...VALID,
+        source: "[G]One\n{time: 7/8}\n{x_groups: 2+2}\n{tempo: 500}\n[C]Two",
+      },
+      ACTOR,
+    );
+    expect(result).toEqual({
+      ok: false,
+      errors: [
+        { field: "source", code: "invalid_directive", detail: "{x_groups: 2+2} (3)" },
+        { field: "source", code: "invalid_directive", detail: "{tempo: 500} (4)" },
+      ],
+    });
+    expect(repository.songs).toHaveLength(0);
+  });
+
+  it("accepts a sheet that changes tempo, meter and key by section", async () => {
+    const repository = new InMemorySongRepository();
+    const result = await new PublishSong(repository, new FakeRecordingInfo()).execute(
+      {
+        ...VALID,
+        source: "[G]One\n{time: 7/8}\n{x_groups: 3+2+2}\n{x_ramp: 92-120 4}\n{key: Ab}\n[Ab]Two",
+      },
+      ACTOR,
+    );
+    expect(result.ok).toBe(true);
+  });
+
   it("requires a tempo", async () => {
     const result = await new PublishSong(new InMemorySongRepository(), new FakeRecordingInfo()).execute({ ...VALID, tempo: " " }, ACTOR);
     expect(result).toEqual({ ok: false, errors: [{ field: "tempo", code: "required" }] });
