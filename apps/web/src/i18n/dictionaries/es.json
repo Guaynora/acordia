@@ -226,7 +226,37 @@
     "publishingAs": "Se publicará a nombre de {name}.",
     "saveChanges": "Guardar cambios",
     "editTitle": "Editar «{name}»",
-    "editSubtitle": "{title} · los cambios se ven al momento en la página de la versión."
+    "editSubtitle": "{title} · los cambios se ven al momento en la página de la versión.",
+    "advanced": {
+      "title": "Opciones avanzadas: secciones, compases y cambios de tempo",
+      "sections": "Secciones: escribe su nombre en una línea propia.",
+      "sectionsExample": "Coro:\n[Puente]",
+      "bars": "Compases: márcalos con |. Los acordes de un compás se lo reparten, y un compás vacío sostiene el acorde anterior. Sin barras, cada acorde dura un compás.",
+      "barsExample": "| G     D   | Em      |  |\n  Caminando por la calle",
+      "changes": "Cambios en una sección: en líneas propias, al inicio de la sección. Lo que no cambies se mantiene.",
+      "changesItems": [
+        {
+          "code": "{tempo: 140}",
+          "text": "tempo nuevo"
+        },
+        {
+          "code": "{time: 7/8}",
+          "text": "compás nuevo"
+        },
+        {
+          "code": "{x_groups: 2+2+3}",
+          "text": "dónde caen los acentos del compás"
+        },
+        {
+          "code": "{x_ramp: 140-120 4}",
+          "text": "acelerar o frenar: de 140 a 120 BPM en 4 compases"
+        },
+        {
+          "code": "{key: Ab}",
+          "text": "la sección cambia de tono"
+        }
+      ]
+    }
   },
   "notFound": {
     "title": "No encontramos esa página",

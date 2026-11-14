@@ -226,7 +226,37 @@
     "publishingAs": "Published under the name {name}.",
     "saveChanges": "Save changes",
     "editTitle": "Edit “{name}”",
-    "editSubtitle": "{title} · changes show on the version page right away."
+    "editSubtitle": "{title} · changes show on the version page right away.",
+    "advanced": {
+      "title": "Advanced options: sections, bars and tempo changes",
+      "sections": "Sections: write the name on its own line.",
+      "sectionsExample": "Chorus:\n[Bridge]",
+      "bars": "Bars: mark them with |. Chords in a bar share it, and an empty bar holds the chord before it. Without bar lines, each chord lasts one bar.",
+      "barsExample": "| G     D   | Em      |  |\n  Walking down the street",
+      "changes": "Changes in a section: on their own lines, at the start of the section. Whatever you don't change carries on.",
+      "changesItems": [
+        {
+          "code": "{tempo: 140}",
+          "text": "new tempo"
+        },
+        {
+          "code": "{time: 7/8}",
+          "text": "new time signature"
+        },
+        {
+          "code": "{x_groups: 2+2+3}",
+          "text": "where the accents of the bar fall"
+        },
+        {
+          "code": "{x_ramp: 140-120 4}",
+          "text": "speed up or slow down: from 140 to 120 BPM over 4 bars"
+        },
+        {
+          "code": "{key: Ab}",
+          "text": "the section changes key"
+        }
+      ]
+    }
   },
   "notFound": {
     "title": "We couldn't find that page",

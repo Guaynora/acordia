@@ -276,6 +276,8 @@ export function UploadForm({
             />
           </Field>
 
+          <AdvancedHelp labels={labels.advanced} />
+
           {issues.length > 0 && (
             <section role="alert" className="rounded-xl border border-danger/30 bg-danger-soft p-4">
               <div className="mb-3 flex items-center justify-between gap-3">
@@ -428,5 +430,38 @@ function Field({
         </span>
       ))}
     </label>
+  );
+}
+
+/** Folded reference for what the sheet can say beyond chords and lyrics. */
+function AdvancedHelp({ labels }: { labels: Dictionary["upload"]["advanced"] }) {
+  const example = "mt-1.5 overflow-x-auto rounded-lg bg-card px-3 py-2 font-mono text-xs leading-relaxed whitespace-pre";
+  return (
+    <details className="rounded-xl border border-border bg-surface px-4 py-3 text-sm">
+      <summary className="cursor-pointer font-semibold">{labels.title}</summary>
+      <div className="mt-3 flex flex-col gap-4">
+        <div>
+          <p>{labels.sections}</p>
+          <pre className={example}>{labels.sectionsExample}</pre>
+        </div>
+        <div>
+          <p>{labels.bars}</p>
+          <pre className={example}>{labels.barsExample}</pre>
+        </div>
+        <div>
+          <p>{labels.changes}</p>
+          <dl className="mt-1.5 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5">
+            {labels.changesItems.map((item) => (
+              <div key={item.code} className="contents">
+                <dt>
+                  <code className="rounded bg-card px-1.5 py-0.5 font-mono text-xs">{item.code}</code>
+                </dt>
+                <dd className="text-muted">{item.text}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      </div>
+    </details>
   );
 }
