@@ -5,6 +5,8 @@ import { type Accent, METERS, type Meter, type Subdivision, meterFor, subdivisio
 import { MetronomeTicker } from "@/domain/metronome-ticker";
 import { type TempoMarking, tempoMarking } from "@/domain/tempo";
 import { format } from "@/i18n/format";
+import { usePracticeClock } from "./practice-clock";
+import { useWakeLock } from "./use-wake-lock";
 
 export interface MetronomeLabels {
   readonly title: string;
@@ -61,34 +63,6 @@ interface Shown {
   readonly countdown: number | null;
 }
 
-/** Keeps the phone screen on while `active`, re-taking the lock when the tab returns. */
-function useWakeLock(active: boolean) {
-  useEffect(() => {
-    if (!active || !("wakeLock" in navigator)) return;
-    let lock: WakeLockSentinel | null = null;
-    let cancelled = false;
-    const acquire = async () => {
-      try {
-        const next = await navigator.wakeLock.request("screen");
-        if (cancelled) void next.release();
-        else lock = next;
-      } catch {
-        // Denied (battery saver, unsupported context): the metronome still works.
-      }
-    };
-    const onVisible = () => {
-      if (document.visibilityState === "visible") void acquire();
-    };
-    void acquire();
-    document.addEventListener("visibilitychange", onVisible);
-    return () => {
-      cancelled = true;
-      document.removeEventListener("visibilitychange", onVisible);
-      void lock?.release();
-    };
-  }, [active]);
-}
-
 const clamp = (bpm: number) => Math.min(MAX_BPM, Math.max(MIN_BPM, Math.round(bpm)));
 
 /**
@@ -110,6 +84,9 @@ export function Metronome({
 }) {
   const songMeter = meterFor(songTimeSignature);
   const [bpm, setBpm] = useState(clamp(songBpm ?? DEFAULT_BPM));
+  // What the user is typing; clamped only when they leave the field, so
+  // typing "120" does not jump to 30 at the "1" and then to 300.
+  const [bpmDraft, setBpmDraft] = useState<string | null>(null);
   const [meter, setMeter] = useState<Meter>(songMeter);
   const [subdivision, setSubdivision] = useState<Subdivision>(1);
   const [countInBars, setCountInBars] = useState(0);
@@ -117,6 +94,9 @@ export function Metronome({
   const [running, setRunning] = useState(false);
   const [shown, setShown] = useState<Shown | null>(null);
   useWakeLock(running);
+  // Lets the chord sheet follow the bars and start or stop the metronome.
+  const clock = usePracticeClock();
+  const runningRef = useRef(false);
 
   const bpmRef = useRef(bpm);
   const countInBarsRef = useRef(countInBars);
@@ -175,9 +155,12 @@ export function Metronome({
     timerRef.current = null;
     frameRef.current = null;
     queue.current = [];
+    const wasRunning = runningRef.current;
+    runningRef.current = false;
     setRunning(false);
     setShown(null);
-  }, []);
+    if (wasRunning) clock?.emit({ type: "stop" });
+  }, [clock]);
 
   const start = useCallback(async () => {
     const context = contextRef.current ?? new AudioContext();
@@ -203,13 +186,26 @@ export function Metronome({
       let latest: Shown | null = null;
       while (queue.current.length > 0 && (queue.current[0]?.time ?? Infinity) <= context.currentTime) {
         latest = queue.current.shift() ?? null;
+        // A bar of the music (not the count-in) starts as this click sounds.
+        if (latest && latest.countdown === null && latest.click === 0) clock?.emit({ type: "downbeat" });
       }
       if (latest) setShown(latest);
       frameRef.current = requestAnimationFrame(draw);
     };
     frameRef.current = requestAnimationFrame(draw);
+    runningRef.current = true;
     setRunning(true);
-  }, [sound]);
+    clock?.emit({ type: "start" });
+  }, [sound, clock]);
+
+  useEffect(
+    () =>
+      clock?.attach({
+        toggle: () => (runningRef.current ? stop() : void start()),
+        isRunning: () => runningRef.current,
+      }),
+    [clock, start, stop],
+  );
 
   useEffect(
     () => () => {
@@ -288,8 +284,22 @@ export function Metronome({
             inputMode="numeric"
             min={MIN_BPM}
             max={MAX_BPM}
-            value={bpm}
-            onChange={(e) => setBpm(clamp(Number(e.target.value) || MIN_BPM))}
+            value={bpmDraft ?? bpm}
+            onChange={(e) => {
+              const text = e.target.value;
+              setBpmDraft(text);
+              // Follow along live while the number typed is already in range.
+              const typed = Number(text);
+              if (text !== "" && typed >= MIN_BPM && typed <= MAX_BPM) setBpm(Math.round(typed));
+            }}
+            onBlur={() => {
+              const typed = Number(bpmDraft);
+              if (bpmDraft !== null && bpmDraft.trim() !== "" && Number.isFinite(typed)) setBpm(clamp(typed));
+              setBpmDraft(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") e.currentTarget.blur();
+            }}
             className="w-24 bg-transparent text-center font-mono text-4xl font-bold tabular-nums outline-none [appearance:textfield] focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-accent/30 [&::-webkit-inner-spin-button]:appearance-none"
           />
           <span aria-hidden="true" className="eyebrow">

@@ -70,6 +70,17 @@
     "fontSmaller": "Letra más pequeña",
     "fontLarger": "Letra más grande",
     "metronomeShortcut": "Ir al metrónomo",
+    "autoScroll": {
+      "title": "Auto-scroll",
+      "play": "Tocar",
+      "pause": "Pausar",
+      "restart": "Desde el inicio",
+      "tempoMode": "Con el metrónomo",
+      "manualMode": "Velocidad manual",
+      "tempoHelp": "Dale play aquí o en el metrónomo: tras la cuenta previa, la hoja avanza un compás por acorde al tempo y compás del metrónomo, y resalta el que suena. Toca una línea o el nombre de una sección para empezar desde ahí.",
+      "manualHelp": "Desplaza la página a velocidad constante, sin seguir al metrónomo. Toca una línea o el nombre de una sección para empezar desde ahí.",
+      "speed": "Velocidad"
+    },
     "versions": "Versiones",
     "addVersion": "Subir otra versión",
     "versionBy": "por {author}",
