@@ -1,6 +1,7 @@
 import { slugify } from "@/domain/slug";
 import { ARRANGEMENT_KINDS, type ArrangementKind, RESERVED_ARRANGEMENT_SLUGS } from "@/domain/song";
 import type { SongRepository } from "@/domain/song-repository";
+import type { Actor } from "@/domain/user";
 import { type InputError, optionalText, validateMusic } from "./song-input";
 
 export interface AddArrangementInput {
@@ -8,7 +9,6 @@ export interface AddArrangementInput {
   readonly name: string;
   readonly kind: string;
   readonly description: string;
-  readonly authorName: string;
   readonly key: string;
   /** Empty means "same as the song". */
   readonly tempo: string;
@@ -25,7 +25,7 @@ export type AddArrangementResult =
 export class AddArrangement {
   constructor(private readonly songs: SongRepository) {}
 
-  async execute(input: AddArrangementInput): Promise<AddArrangementResult> {
+  async execute(input: AddArrangementInput, actor: Actor): Promise<AddArrangementResult> {
     const song = await this.songs.findBySlug(input.songSlug);
     if (!song) return { ok: false, errors: [{ field: "song", code: "not_found" }] };
 
@@ -52,7 +52,7 @@ export class AddArrangement {
       name,
       kind,
       description: optionalText(input.description, 280),
-      authorName: optionalText(input.authorName, 80),
+      authorId: actor.id,
       key: music.key,
       // Store an override only when it differs from the song.
       tempo: music.tempo !== null && music.tempo !== song.tempo ? music.tempo : null,

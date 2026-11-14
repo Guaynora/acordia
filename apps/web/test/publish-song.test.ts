@@ -3,6 +3,8 @@ import { PublishSong } from "@/application/publish-song";
 import { looksLikeChordPro } from "@/application/song-input";
 import { InMemorySongRepository } from "./support/in-memory-song-repository";
 
+const ACTOR = { id: "user-1", name: "Ana" };
+
 const VALID = {
   title: "Canción de prueba",
   artist: "Él Mismo",
@@ -16,7 +18,7 @@ const VALID = {
 describe("PublishSong", () => {
   it("imports plain text, normalizes the key and stores the song", async () => {
     const repository = new InMemorySongRepository();
-    const result = await new PublishSong(repository).execute({ ...VALID, key: "Bb" });
+    const result = await new PublishSong(repository).execute({ ...VALID, key: "Bb" }, ACTOR);
 
     expect(result).toEqual({ ok: true, slug: "cancion-de-prueba-el-mismo" });
     const stored = repository.songs[0];
@@ -24,19 +26,21 @@ describe("PublishSong", () => {
     expect(stored?.tempo).toBe(92);
     expect(stored?.arrangement.chordpro).toBe("[G]Caminando [D/F#]por la calle");
     expect(stored?.recordings).toEqual([{ provider: "youtube", externalId: "dQw4w9WgXcQ" }]);
+    expect(stored?.createdBy).toBe("user-1");
+    expect(stored?.arrangement.authorId).toBe("user-1");
   });
 
   it("keeps ChordPro input as written", async () => {
     const repository = new InMemorySongRepository();
-    await new PublishSong(repository).execute({ ...VALID, key: "G", source: "{soc}\n[G]Hola [C]mundo\n{eoc}" });
+    await new PublishSong(repository).execute({ ...VALID, key: "G", source: "{soc}\n[G]Hola [C]mundo\n{eoc}" }, ACTOR);
     expect(repository.songs[0]?.arrangement.chordpro).toBe("{soc}\n[G]Hola [C]mundo\n{eoc}");
   });
 
   it("makes slugs unique", async () => {
     const repository = new InMemorySongRepository();
     const publish = new PublishSong(repository);
-    await publish.execute({ ...VALID, key: "G" });
-    const second = await publish.execute({ ...VALID, key: "G" });
+    await publish.execute({ ...VALID, key: "G" }, ACTOR);
+    const second = await publish.execute({ ...VALID, key: "G" }, ACTOR);
     expect(second).toEqual({ ok: true, slug: "cancion-de-prueba-el-mismo-2" });
   });
 
@@ -46,13 +50,13 @@ describe("PublishSong", () => {
       ...VALID,
       key: "C",
       source: "C   Hm   G   D\nla la la la",
-    });
+    }, ACTOR);
     expect(result).toEqual({ ok: false, errors: [{ field: "source", code: "unknown_chord", detail: "Hm (1)" }] });
     expect(repository.songs).toHaveLength(0);
   });
 
   it("requires a tempo", async () => {
-    const result = await new PublishSong(new InMemorySongRepository()).execute({ ...VALID, tempo: " " });
+    const result = await new PublishSong(new InMemorySongRepository()).execute({ ...VALID, tempo: " " }, ACTOR);
     expect(result).toEqual({ ok: false, errors: [{ field: "tempo", code: "required" }] });
   });
 
@@ -65,7 +69,7 @@ describe("PublishSong", () => {
       timeSignature: "9/16",
       source: "",
       recordingUrls: ["https://example.com/song"],
-    });
+    }, ACTOR);
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.errors.map((e) => `${e.field}:${e.code}`)).toEqual([

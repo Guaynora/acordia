@@ -1,7 +1,8 @@
 import { parseRecordingUrl, type RecordingReference } from "@/domain/recording-url";
 import { slugify } from "@/domain/slug";
 import type { SongRepository } from "@/domain/song-repository";
-import { type InputError, optionalText, validateMusic } from "./song-input";
+import type { Actor } from "@/domain/user";
+import { type InputError, validateMusic } from "./song-input";
 
 export interface PublishSongInput {
   readonly title: string;
@@ -11,8 +12,6 @@ export interface PublishSongInput {
   readonly timeSignature: string;
   readonly source: string;
   readonly recordingUrls: readonly string[];
-  /** Who wrote this chart; free text until user accounts exist. */
-  readonly authorName?: string;
 }
 
 export type PublishSongResult =
@@ -23,7 +22,7 @@ export type PublishSongResult =
 export class PublishSong {
   constructor(private readonly songs: SongRepository) {}
 
-  async execute(input: PublishSongInput): Promise<PublishSongResult> {
+  async execute(input: PublishSongInput, actor: Actor): Promise<PublishSongResult> {
     const errors: InputError[] = [];
     const title = input.title.trim();
     const artist = input.artist.trim();
@@ -51,12 +50,13 @@ export class PublishSong {
       originalKey: music.key,
       tempo: music.tempo,
       timeSignature: music.timeSignature ?? "4/4",
+      createdBy: actor.id,
       arrangement: {
         slug: "original",
         name: "Original",
         kind: "original",
         description: null,
-        authorName: optionalText(input.authorName ?? "", 80),
+        authorId: actor.id,
         key: music.key,
         // The song itself carries tempo and meter; the original inherits them.
         tempo: null,

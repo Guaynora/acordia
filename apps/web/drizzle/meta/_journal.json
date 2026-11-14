@@ -15,6 +15,13 @@
       "when": 1794547356013,
       "tag": "0001_closed_absorbing_man",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794624970935,
+      "tag": "0002_eager_gabe_jones",
+      "breakpoints": true
     }
   ]
 }
