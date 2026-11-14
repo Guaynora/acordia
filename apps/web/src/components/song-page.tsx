@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Fragment, Suspense } from "react";
+import { isFeatureEnabled } from "@/config/features";
 import type { Arrangement, Song } from "@/domain/song";
 import { tempoMarking } from "@/domain/tempo";
 import type { Locale } from "@/i18n/config";
@@ -66,6 +67,7 @@ export async function SongPageContent({
         key={arrangement.id}
         chordpro={arrangement.chordpro}
         writtenKey={arrangement.key}
+        autoScroll={isFeatureEnabled("autoScroll")}
         labels={dict.song}
         aside={
           <>

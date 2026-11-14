@@ -70,6 +70,17 @@
     "fontSmaller": "Smaller text",
     "fontLarger": "Larger text",
     "metronomeShortcut": "Go to metronome",
+    "autoScroll": {
+      "title": "Auto-scroll",
+      "play": "Play",
+      "pause": "Pause",
+      "restart": "From the start",
+      "tempoMode": "With the metronome",
+      "manualMode": "Manual speed",
+      "tempoHelp": "Press play here or on the metronome: after the count-in, the sheet moves one bar per chord at the metronome's tempo and meter, highlighting the one sounding. Tap a line or a section name to start from there.",
+      "manualHelp": "Scrolls the page at a steady speed, without following the metronome. Tap a line or a section name to start from there.",
+      "speed": "Speed"
+    },
     "versions": "Versions",
     "addVersion": "Upload another version",
     "versionBy": "by {author}",
