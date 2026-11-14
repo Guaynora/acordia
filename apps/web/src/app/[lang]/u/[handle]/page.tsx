@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { lang as rootLang } from "next/root-params";
 import { Suspense } from "react";
 import { Avatar } from "@/components/avatar";
-import type { ProfileVersion } from "@/domain/profile";
+import { VersionList } from "@/components/version-list";
 import { type Locale, hasLocale } from "@/i18n/config";
 import { type Dictionary, getDictionary } from "@/i18n/dictionaries";
 import { format } from "@/i18n/format";
@@ -57,39 +56,9 @@ async function Content({ lang, dict, params }: { lang: Locale; dict: Dictionary;
         {count === 0 ? (
           <p className="card px-6 py-10 text-center text-muted">{dict.profile.empty}</p>
         ) : (
-          <ol className="flex flex-col gap-3">
-            {profile.versions.map((version) => (
-              <li key={`${version.songSlug}/${version.arrangementSlug}`}>
-                <VersionRow lang={lang} dict={dict} version={version} />
-              </li>
-            ))}
-          </ol>
+          <VersionList lang={lang} dict={dict} versions={profile.versions} />
         )}
       </section>
     </div>
-  );
-}
-
-function VersionRow({ lang, dict, version }: { lang: Locale; dict: Dictionary; version: ProfileVersion }) {
-  const base = `/${lang}/songs/${version.songSlug}`;
-  // The original version lives at the song URL itself.
-  const href = version.arrangementSlug === "original" ? base : `${base}/${version.arrangementSlug}`;
-
-  return (
-    <Link
-      href={href}
-      className="card flex items-center gap-4 p-4 transition hover:border-border-strong hover:shadow-elevated sm:p-5"
-    >
-      <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-accent-soft font-mono text-lg font-bold text-accent">
-        {version.key}
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="truncate font-display text-lg font-semibold">{version.songTitle}</p>
-        <p className="truncate text-sm text-muted">
-          {version.artist} · {version.arrangementName}
-          {version.kind !== "original" && ` (${dict.song.kinds[version.kind]})`}
-        </p>
-      </div>
-    </Link>
   );
 }

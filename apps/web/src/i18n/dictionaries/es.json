@@ -13,7 +13,8 @@
     "signIn": "Entrar",
     "signOut": "Salir",
     "account": "Tu cuenta",
-    "profile": "Tu perfil"
+    "profile": "Tu perfil",
+    "favorites": "Favoritos"
   },
   "home": {
     "title": "Canciones",
@@ -194,5 +195,14 @@
     "empty": "Todavía no ha publicado versiones.",
     "versionsTitle": "Versiones",
     "notFound": "No existe ese perfil."
+  },
+  "favorites": {
+    "title": "Tus favoritos",
+    "subtitle": "Las versiones que guardaste para practicar. Solo tú las ves.",
+    "empty": "Todavía no guardaste ninguna versión. Pulsa «Guardar» en la página de una versión para tenerla aquí.",
+    "save": "Guardar",
+    "saved": "Guardada",
+    "saveHint": "Guardar en tus favoritos",
+    "unsaveHint": "Quitar de tus favoritos"
   }
 }

@@ -1,4 +1,15 @@
-import { boolean, index, integer, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  index,
+  integer,
+  pgEnum,
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+} from "drizzle-orm/pg-core";
 
 // --- Accounts ---------------------------------------------------------------
 // Tables read and written by Better Auth (see infrastructure/auth). Keys are the
@@ -151,4 +162,24 @@ export const recordings = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [uniqueIndex("recordings_song_provider_external_idx").on(table.songId, table.provider, table.externalId)],
+);
+
+// --- Favorites --------------------------------------------------------------
+
+/** Versions a person saved to practice. Private: only the owner sees them. */
+export const favorites = pgTable(
+  "favorites",
+  {
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    arrangementId: uuid("arrangement_id")
+      .notNull()
+      .references(() => arrangements.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.userId, table.arrangementId] }),
+    index("favorites_user_created_idx").on(table.userId, table.createdAt),
+  ],
 );

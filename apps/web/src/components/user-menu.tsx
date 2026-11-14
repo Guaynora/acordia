@@ -35,6 +35,12 @@ export async function UserMenu({ lang, labels }: { lang: Locale; labels: Diction
             {labels.profile}
           </Link>
         )}
+        <Link
+          href={`/${lang}/favorites`}
+          className="block rounded-lg px-3 py-2 text-sm text-muted hover:bg-surface hover:text-foreground"
+        >
+          {labels.favorites}
+        </Link>
         <form action={signOut.bind(null, lang)}>
           <button
             type="submit"
