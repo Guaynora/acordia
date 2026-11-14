@@ -21,12 +21,13 @@ const SECTION_WITH_COLON = /^\s*([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ0-9 .]{0,30}):\s*$/;
 const DIRECTIVE_LINE = /^\s*\{[a-z_]+\s*(?::.*)?\}\s*$/i;
 
 /** Bar lines on a chord line ("|", or "||" at the end of a section). */
-const BAR_LINE = /^\|+$/;
+/** Bar lines, repeat signs ("|:", ":|", ":|x3") and final bars ("||"). */
+const BAR_LINE = /^:?\|+:?(?:x\d+)?$/i;
 
-/** Words of a line; bar lines are tokens of their own even when glued ("|G"). */
+/** Words of a line; bar lines are tokens of their own even when glued ("|G", "G:|"). */
 function tokenize(line: string): Token[] {
   const tokens: Token[] = [];
-  for (const match of line.matchAll(/\|+|[^\s|]+/g)) {
+  for (const match of line.matchAll(/:?\|+:?(?:x\d+)?|[^\s|:]+(?::(?!\|)[^\s|:]*)*/gi)) {
     tokens.push({ text: match[0], column: match.index ?? 0 });
   }
   return tokens;
@@ -43,8 +44,17 @@ type LineKind =
  * before publishing.
  */
 function classify(line: string): LineKind {
-  const words = tokenize(line).filter((t) => !LINE_DECORATION.test(t.text));
-  const bars = words.filter((t) => BAR_LINE.test(t.text));
+  const all = tokenize(line);
+  const words = all.filter((t) => !LINE_DECORATION.test(t.text));
+  // "x3" after a closing repeat says how many times: keep it with the sign.
+  const times = all.find((t) => LINE_DECORATION.test(t.text));
+  const bars = words
+    .filter((t) => BAR_LINE.test(t.text))
+    .map((t, i, list) =>
+      times && i === list.length - 1 && t.text.endsWith(":|")
+        ? { ...t, text: `${t.text}${times.text.replace(/[()]/g, "")}` }
+        : t,
+    );
   const tokens = words.filter((t) => !BAR_LINE.test(t.text));
   if (tokens.length === 0) return { kind: "text" };
   const chords = tokens.filter((t) => isNonChordMarker(t.text) || parseChord(t.text));
@@ -64,8 +74,9 @@ function sectionName(line: string): string | null {
   return null;
 }
 
-/** How a chord or a bar line is written in ChordPro. */
-const toChordPro = (token: Token, bars: readonly Token[]) => (bars.includes(token) ? "|" : `[${token.text}]`);
+/** How a chord or a bar line is written in ChordPro; "||" becomes a plain bar. */
+const toChordPro = (token: Token, bars: readonly Token[]) =>
+  bars.includes(token) ? (/^\|+$/.test(token.text) ? "|" : token.text) : `[${token.text}]`;
 
 /** Chords and bar lines of a chord line, left to right. */
 const inOrder = (chords: Token[], bars: Token[]) => [...chords, ...bars].sort((a, b) => a.column - b.column);

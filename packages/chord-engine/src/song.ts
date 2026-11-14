@@ -3,6 +3,7 @@
  * metadata from directives, and lines split into chord/lyric segments.
  */
 
+import { MARKER_DIRECTIVES, type MarkerDirective } from "./performance";
 import { CHANGE_DIRECTIVES, type ChangeDirective } from "./tempo-directives";
 
 export interface Segment {
@@ -18,6 +19,8 @@ export type SongLine =
   | { readonly kind: "section-end"; readonly section: string }
   /** A tempo, meter, key, grouping or ramp directive, raw as written. */
   | { readonly kind: "change"; readonly directive: ChangeDirective; readonly value: string }
+  /** An ending, a segno or coda mark, or a D.S. / D.C. jump. */
+  | { readonly kind: "marker"; readonly directive: MarkerDirective; readonly value: string }
   | { readonly kind: "empty" };
 
 export interface ParsedSong {
@@ -67,6 +70,9 @@ function parseDirective(name: string, value: string | null, metadata: Record<str
   }
   if (directive.startsWith("end_of_")) {
     return { kind: "section-end", section: directive.slice("end_of_".length) };
+  }
+  if (MARKER_DIRECTIVES.has(directive)) {
+    return { kind: "marker", directive: directive as MarkerDirective, value: value ?? "" };
   }
   if (CHANGE_DIRECTIVES.has(directive)) {
     // Metadata keeps the first value (the starting one); the line marks

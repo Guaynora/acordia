@@ -140,3 +140,27 @@ describe("importing directives in pasted text", () => {
     );
   });
 });
+
+describe("importing repeat signs", () => {
+  it("keeps |: and :| instead of reporting them as chords", () => {
+    const { chordpro, errors } = importChordsOverLyrics("|: G   D | Em  C :|");
+    expect(errors).toEqual([]);
+    expect(chordpro).toBe("|: [G] [D] | [Em] [C] :|");
+  });
+
+  it("keeps how many times to repeat, glued or apart", () => {
+    expect(importChordsOverLyrics("|: G | C :|x3").chordpro).toBe("|: [G] | [C] :|x3");
+    expect(importChordsOverLyrics("|: G | C :| x3").chordpro).toBe("|: [G] | [C] :|x3");
+    expect(importChordsOverLyrics("|: G | C :| (x4)").chordpro).toBe("|: [G] | [C] :|x4");
+  });
+
+  it("splits repeat signs glued to chords", () => {
+    expect(importChordsOverLyrics("|:G  |C D:|").chordpro).toBe("|: [G] | [C] [D] :|");
+  });
+
+  it("keeps a section repeat in its name", () => {
+    expect(importChordsOverLyrics("Coro x2:\nG\nla la").chordpro).toBe(
+      ["{start_of_chorus: Coro x2}", "[G]la la", "{end_of_chorus}"].join("\n"),
+    );
+  });
+});
