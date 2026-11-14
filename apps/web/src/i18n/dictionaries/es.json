@@ -129,7 +129,26 @@
     "songTempo": "Tempo de la canción: {bpm} BPM · {signature}",
     "songNoTempo": "La canción no indica tempo · {signature}",
     "backToSong": "Volver al tempo de la canción",
-    "relative": "{percent}% del tempo original"
+    "relative": "{percent}% del tempo original",
+    "subdivision": "Subdivisión",
+    "subdivisions": {
+      "1": "Negras",
+      "2": "Corcheas",
+      "3": "Tresillos",
+      "4": "Semicorch."
+    },
+    "compoundSubdivisions": {
+      "1": "Corcheas",
+      "2": "Semicorch."
+    },
+    "countIn": "Cuenta previa",
+    "countInNone": "No",
+    "countInBars": "{bars} comp.",
+    "counting": "Cuenta… {count}",
+    "mute": "Silenciar",
+    "unmute": "Activar sonido",
+    "silentHint": "Sin sonido: sigue el pulso en la pantalla.",
+    "countInOne": "1 comp."
   },
   "upload": {
     "title": "Subir canción",
